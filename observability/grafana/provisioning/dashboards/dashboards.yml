@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: NiteOut k6
+    orgId: 1
+    folder: NiteOut
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,2037 @@
+[
+  {
+    "key": "POST /phone-waitinglist",
+    "method": "POST",
+    "path": "/phone-waitinglist",
+    "summary": "Add phone in waitinglist",
+    "tags": [
+      "Waitlist",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /phone-waitinglist",
+    "method": "GET",
+    "path": "/phone-waitinglist",
+    "summary": "Get phones in waitinglist",
+    "tags": [
+      "Waitlist"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /waitlist/smsCode",
+    "method": "POST",
+    "path": "/waitlist/smsCode",
+    "summary": "Send SMS code to a phone number in the waitlist",
+    "tags": [
+      "Waitlist"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /waitlist/sent",
+    "method": "GET",
+    "path": "/waitlist/sent",
+    "summary": "Get sent waitlist entries",
+    "tags": [
+      "Waitlist"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /spotify/token",
+    "method": "GET",
+    "path": "/spotify/token",
+    "summary": "Get Spotify access token",
+    "tags": [
+      "Spotify"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /me",
+    "method": "GET",
+    "path": "/me",
+    "summary": "Get current profile data",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /me",
+    "method": "POST",
+    "path": "/me",
+    "summary": "Add profile data, you can pass the schema payload and fill the user with required fields",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /me/stats",
+    "method": "POST",
+    "path": "/me/stats",
+    "summary": "Get stats",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /me/firstTimes",
+    "method": "GET",
+    "path": "/me/firstTimes",
+    "summary": "Get one time action states",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /me/firstTimes",
+    "method": "POST",
+    "path": "/me/firstTimes",
+    "summary": "Get one time action states",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /sendWelcomeEmail",
+    "method": "POST",
+    "path": "/sendWelcomeEmail",
+    "summary": "Send a welcome email to the user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /sendVerificationEmail",
+    "method": "POST",
+    "path": "/sendVerificationEmail",
+    "summary": "Send a verification email to the user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /sendVenueRequirementsEmail",
+    "method": "POST",
+    "path": "/sendVenueRequirementsEmail",
+    "summary": "Send venue requirements email to the user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /block",
+    "method": "POST",
+    "path": "/block",
+    "summary": "Block user with userId",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /unblock",
+    "method": "POST",
+    "path": "/unblock",
+    "summary": "Unblock user with userId",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /ban",
+    "method": "POST",
+    "path": "/ban",
+    "summary": "Ban user with userId",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /unban",
+    "method": "POST",
+    "path": "/unban",
+    "summary": "Remove ban from user with userId",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /bannedUsers",
+    "method": "GET",
+    "path": "/bannedUsers",
+    "summary": "Get all banned users",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /tokens",
+    "method": "POST",
+    "path": "/tokens",
+    "summary": "Save spotify tokens",
+    "tags": [
+      "Spotify"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /checkDjName",
+    "method": "POST",
+    "path": "/checkDjName",
+    "summary": "Check if DJ name is already taken",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /venueRequest",
+    "method": "GET",
+    "path": "/venueRequest",
+    "summary": "get venue requests",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /venueRequest",
+    "method": "POST",
+    "path": "/venueRequest",
+    "summary": "Create venue requests",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /request",
+    "method": "POST",
+    "path": "/request",
+    "summary": "Create new requests",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /djs",
+    "method": "GET",
+    "path": "/djs",
+    "summary": "Get all djs",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /profileImage",
+    "method": "POST",
+    "path": "/profileImage",
+    "summary": "Save profile image",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "multipart/form-data"
+    ]
+  },
+  {
+    "key": "POST /groupChats",
+    "method": "POST",
+    "path": "/groupChats",
+    "summary": "Save group chat image",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "multipart/form-data"
+    ]
+  },
+  {
+    "key": "POST /reports",
+    "method": "POST",
+    "path": "/reports",
+    "summary": "Report user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /reports",
+    "method": "GET",
+    "path": "/reports",
+    "summary": "Get reports",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /my-blocked-users",
+    "method": "GET",
+    "path": "/my-blocked-users",
+    "summary": "Get my blocked users",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /who-blocked-me",
+    "method": "GET",
+    "path": "/who-blocked-me",
+    "summary": "Get users who blocked me",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /requestAction",
+    "method": "POST",
+    "path": "/requestAction",
+    "summary": "Approve or Deny requests",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /moderation",
+    "method": "GET",
+    "path": "/moderation",
+    "summary": "Get count of flaged content",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /leaderboard",
+    "method": "GET",
+    "path": "/leaderboard",
+    "summary": "Get leaderboard",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "gameType",
+        "required": false
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /underage-emails",
+    "method": "POST",
+    "path": "/underage-emails",
+    "summary": "Add Underage email",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /underage-emails",
+    "method": "GET",
+    "path": "/underage-emails",
+    "summary": "Get underage emails",
+    "tags": [
+      "Profile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /underage-emails/remove",
+    "method": "POST",
+    "path": "/underage-emails/remove",
+    "summary": "Remove underage emails.",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /check-if-email-exists",
+    "method": "POST",
+    "path": "/check-if-email-exists",
+    "summary": "Check email unique",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /user/handle",
+    "method": "POST",
+    "path": "/user/handle",
+    "summary": "Add user handle",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /user/handle/check",
+    "method": "POST",
+    "path": "/user/handle/check",
+    "summary": "Check user handle",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /users",
+    "method": "GET",
+    "path": "/users",
+    "summary": "Get user info",
+    "tags": [
+      "Profile",
+      "Mobile"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "query",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /user/migrate",
+    "method": "POST",
+    "path": "/user/migrate",
+    "summary": "Migrate SMS user to normal user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "PUT /profile/{userId}/updateLivePushTokenForEvent/{eventId}",
+    "method": "PUT",
+    "path": "/profile/{userId}/updateLivePushTokenForEvent/{eventId}",
+    "summary": "Update Live Activity Push Token for a user",
+    "tags": [
+      "Profile"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "userId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "DELETE /playlists/{playlistId}/musics/clear",
+    "method": "DELETE",
+    "path": "/playlists/{playlistId}/musics/clear",
+    "summary": "Delete all musics in playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /playlists/{playlistId}/musics/{playlistIdInSongObject}",
+    "method": "DELETE",
+    "path": "/playlists/{playlistId}/musics/{playlistIdInSongObject}",
+    "summary": "Delete playlist in playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /playlists/clear",
+    "method": "DELETE",
+    "path": "/playlists/clear",
+    "summary": "Delete all playlists",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /playlists/{playlistId}/musics/clear/{musicId}",
+    "method": "DELETE",
+    "path": "/playlists/{playlistId}/musics/clear/{musicId}",
+    "summary": "Delete music in playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /playlists",
+    "method": "POST",
+    "path": "/playlists",
+    "summary": "Add new playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /playlists",
+    "method": "GET",
+    "path": "/playlists",
+    "summary": "Get all playlists",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /playlists/{playlistId}",
+    "method": "DELETE",
+    "path": "/playlists/{playlistId}",
+    "summary": "Delete playlist with id",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "PUT /playlists/{playlistId}",
+    "method": "PUT",
+    "path": "/playlists/{playlistId}",
+    "summary": "Edit playlist with id",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /playlists/{playlistId}/musics",
+    "method": "POST",
+    "path": "/playlists/{playlistId}/musics",
+    "summary": "Add new musics to playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /playlists/{playlistId}/musics",
+    "method": "GET",
+    "path": "/playlists/{playlistId}/musics",
+    "summary": "Get all musics from playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /playlists/{playlistId}/musics/reorder",
+    "method": "POST",
+    "path": "/playlists/{playlistId}/musics/reorder",
+    "summary": "Reorder musics into the playlist",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /playlists/reorder",
+    "method": "POST",
+    "path": "/playlists/reorder",
+    "summary": "Reorder playlists",
+    "tags": [
+      "Playlists"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /plans",
+    "method": "GET",
+    "path": "/plans",
+    "summary": "Get all plans",
+    "tags": [
+      "Plans"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /plans",
+    "method": "POST",
+    "path": "/plans",
+    "summary": "Add new plan",
+    "tags": [
+      "Plans"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /plans/{planId}",
+    "method": "GET",
+    "path": "/plans/{planId}",
+    "summary": "Get plan by id",
+    "tags": [
+      "Plans"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "planId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "PUT /plans/{planId}",
+    "method": "PUT",
+    "path": "/plans/{planId}",
+    "summary": "Update plan",
+    "tags": [
+      "Plans"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "planId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "DELETE /plans/{planId}",
+    "method": "DELETE",
+    "path": "/plans/{planId}",
+    "summary": "Delete plan by id",
+    "tags": [
+      "Plans"
+    ],
+    "class": "destructive",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "planId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /plans/{planId}/rsvps",
+    "method": "GET",
+    "path": "/plans/{planId}/rsvps",
+    "summary": "Get rsvps for a plan",
+    "tags": [
+      "Plans"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "planId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /plans/{planId}/rsvps",
+    "method": "POST",
+    "path": "/plans/{planId}/rsvps",
+    "summary": "RSVP to a plan",
+    "tags": [
+      "Plans"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "planId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /contact-us",
+    "method": "POST",
+    "path": "/contact-us",
+    "summary": "Contact Us form submission",
+    "tags": [
+      "Miscellaneous"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /subscribe-to-email-list",
+    "method": "POST",
+    "path": "/subscribe-to-email-list",
+    "summary": "Subscribe to email list",
+    "tags": [
+      "Miscellaneous",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /unsubscribe-from-email-list",
+    "method": "GET",
+    "path": "/unsubscribe-from-email-list",
+    "summary": "Unsubscribe from email list",
+    "tags": [
+      "Miscellaneous"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "email",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /get-email-list",
+    "method": "GET",
+    "path": "/get-email-list",
+    "summary": "Get email list",
+    "tags": [
+      "Miscellaneous"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /user-invite-code",
+    "method": "GET",
+    "path": "/user-invite-code",
+    "summary": "Get user invite code",
+    "tags": [
+      "Miscellaneous",
+      "Mobile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /tests/token",
+    "method": "GET",
+    "path": "/tests/token",
+    "summary": "Get test firebase id token",
+    "tags": [
+      "Miscellaneous",
+      "Mobile"
+    ],
+    "class": "test_utility",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /invite-code",
+    "method": "GET",
+    "path": "/invite-code",
+    "summary": "Get all invite codes",
+    "tags": [
+      "Invite Code"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /invite-code",
+    "method": "POST",
+    "path": "/invite-code",
+    "summary": "Generate invite code",
+    "tags": [
+      "Invite Code"
+    ],
+    "class": "operator_admin",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "count",
+        "required": true
+      },
+      {
+        "in": "query",
+        "name": "maxUseCount",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /invite-code/{key}",
+    "method": "DELETE",
+    "path": "/invite-code/{key}",
+    "summary": "Delete invite code",
+    "tags": [
+      "Invite Code"
+    ],
+    "class": "destructive",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "key",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /home/announcement",
+    "method": "DELETE",
+    "path": "/home/announcement",
+    "summary": "Remove Announcement",
+    "tags": [
+      "Home"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /home/announcement",
+    "method": "GET",
+    "path": "/home/announcement",
+    "summary": "Get Announcement",
+    "tags": [
+      "Home"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /home/announcement",
+    "method": "POST",
+    "path": "/home/announcement",
+    "summary": "Post Announcement",
+    "tags": [
+      "Home"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /home/playing-songs",
+    "method": "GET",
+    "path": "/home/playing-songs",
+    "summary": "Batch get to get every venue's currently playing song",
+    "tags": [
+      "Home",
+      "Mobile"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /feed/streamInfo",
+    "method": "GET",
+    "path": "/feed/streamInfo",
+    "summary": "",
+    "tags": [
+      "FeedFM"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /feed/setStation",
+    "method": "POST",
+    "path": "/feed/setStation",
+    "summary": "Set the current station for a bar",
+    "tags": [
+      "FeedFM"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /feed/stations",
+    "method": "GET",
+    "path": "/feed/stations",
+    "summary": "Get a list of available stations",
+    "tags": [
+      "FeedFM"
+    ],
+    "class": "operator_admin",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "page",
+        "required": false
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /events",
+    "method": "GET",
+    "path": "/events",
+    "summary": "Get all events",
+    "tags": [
+      "Events"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "filter",
+        "required": false
+      },
+      {
+        "in": "query",
+        "name": "userId",
+        "required": false
+      },
+      {
+        "in": "query",
+        "name": "withRsvp",
+        "required": false
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /events",
+    "method": "POST",
+    "path": "/events",
+    "summary": "Add new event",
+    "tags": [
+      "Events"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /events/old",
+    "method": "GET",
+    "path": "/events/old",
+    "summary": "Get Old events",
+    "tags": [
+      "Events"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /events/current",
+    "method": "GET",
+    "path": "/events/current",
+    "summary": "Get current events",
+    "tags": [
+      "Events"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "PUT /events/{eventId}",
+    "method": "PUT",
+    "path": "/events/{eventId}",
+    "summary": "Update event",
+    "tags": [
+      "Events"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "DELETE /events/{eventId}",
+    "method": "DELETE",
+    "path": "/events/{eventId}",
+    "summary": "Delete event by id",
+    "tags": [
+      "Events"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /events/{eventId}/rsvp",
+    "method": "GET",
+    "path": "/events/{eventId}/rsvp",
+    "summary": "Get all rsvps for the event",
+    "tags": [
+      "Events"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /events/{eventId}/rsvp",
+    "method": "POST",
+    "path": "/events/{eventId}/rsvp",
+    "summary": "Set users rsvp status",
+    "tags": [
+      "Events",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "DELETE /events/{eventId}/rsvp",
+    "method": "DELETE",
+    "path": "/events/{eventId}/rsvp",
+    "summary": "Remove users rsvp from event",
+    "tags": [
+      "Events"
+    ],
+    "class": "destructive",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /events/{eventId}/liveActivity",
+    "method": "POST",
+    "path": "/events/{eventId}/liveActivity",
+    "summary": "Handle Live Activity operations",
+    "tags": [
+      "Events"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/get-verification-code",
+    "method": "POST",
+    "path": "/event/get-verification-code",
+    "summary": "Get verification code",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/login-sms",
+    "method": "POST",
+    "path": "/event/login-sms",
+    "summary": "Login with SMS",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/logout",
+    "method": "POST",
+    "path": "/event/logout",
+    "summary": "Logout",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/verify-age",
+    "method": "POST",
+    "path": "/event/verify-age",
+    "summary": "Verify and set user date of birth",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/save-contact-info",
+    "method": "POST",
+    "path": "/event/save-contact-info",
+    "summary": "Save underage contact info",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/set-user-name",
+    "method": "POST",
+    "path": "/event/set-user-name",
+    "summary": "Set user name",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /event/profile-data",
+    "method": "GET",
+    "path": "/event/profile-data",
+    "summary": "Get profile data",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/comments",
+    "method": "POST",
+    "path": "/event/{eventId}/comments",
+    "summary": "Post a comment",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /event/{eventId}/comments",
+    "method": "GET",
+    "path": "/event/{eventId}/comments",
+    "summary": "Get comments for an event",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{commentId}/react",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{commentId}/react",
+    "summary": "React to a top-level comment",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{parentCommentId}/{commentId}/react",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{parentCommentId}/{commentId}/react",
+    "summary": "React to a reply",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "parentCommentId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{commentId}/like",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{commentId}/like",
+    "summary": "Like a top-level comment",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{parentCommentId}/{commentId}/like",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{parentCommentId}/{commentId}/like",
+    "summary": "Like a reply",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "parentCommentId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{commentId}/report",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{commentId}/report",
+    "summary": "Report a top-level comment",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/comments/{parentCommentId}/{commentId}/report",
+    "method": "POST",
+    "path": "/event/{eventId}/comments/{parentCommentId}/{commentId}/report",
+    "summary": "Report a reply",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "parentCommentId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /event/{eventId}/comments/{commentId}",
+    "method": "DELETE",
+    "path": "/event/{eventId}/comments/{commentId}",
+    "summary": "Delete a top-level comment",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "destructive",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /event/{eventId}/comments/{parentCommentId}/{commentId}",
+    "method": "DELETE",
+    "path": "/event/{eventId}/comments/{parentCommentId}/{commentId}",
+    "summary": "Delete a reply",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "destructive",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "parentCommentId",
+        "required": true
+      },
+      {
+        "in": "path",
+        "name": "commentId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /event/{eventId}/rsvp",
+    "method": "POST",
+    "path": "/event/{eventId}/rsvp",
+    "summary": "RSVP to event",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "user_write",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /event/{eventId}/rsvp",
+    "method": "GET",
+    "path": "/event/{eventId}/rsvp",
+    "summary": "Get user's RSVP for an event",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /event/{eventId}/guests",
+    "method": "GET",
+    "path": "/event/{eventId}/guests",
+    "summary": "Get guest list for an event",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /event/{eventId}",
+    "method": "GET",
+    "path": "/event/{eventId}",
+    "summary": "Get event HTML",
+    "tags": [
+      "Event Page"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "eventId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /chat/messages",
+    "method": "POST",
+    "path": "/chat/messages",
+    "summary": "Add message into the chat",
+    "tags": [
+      "Chat",
+      "Mobile"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /bars/stream-info",
+    "method": "GET",
+    "path": "/bars/stream-info",
+    "summary": "Get stream information for multiple bars",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "barIds",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /bars/{barId}",
+    "method": "GET",
+    "path": "/bars/{barId}",
+    "summary": "Get a single bar by the barId",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /bars/{barId}/getannouncement",
+    "method": "GET",
+    "path": "/bars/{barId}/getannouncement",
+    "summary": "Get anouncement message for specific bar",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /bars",
+    "method": "GET",
+    "path": "/bars",
+    "summary": "Get all bars available",
+    "tags": [
+      "Bars",
+      "Mobile"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "withAccess",
+        "required": false
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /bars/{barId}/music",
+    "method": "GET",
+    "path": "/bars/{barId}/music",
+    "summary": "Get a current music playing in the bar",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /bars/{barId}/queue",
+    "method": "GET",
+    "path": "/bars/{barId}/queue",
+    "summary": "Get queue for specific bar",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /bars/{barId}/queue",
+    "method": "POST",
+    "path": "/bars/{barId}/queue",
+    "summary": "Add new music into the queue",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /bars/{barId}/queue/batch",
+    "method": "POST",
+    "path": "/bars/{barId}/queue/batch",
+    "summary": "Add multiple musics into the queue",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /bars/{barId}/queue/reorder",
+    "method": "POST",
+    "path": "/bars/{barId}/queue/reorder",
+    "summary": "Reorder into the queue",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /bars/{barId}/setannouncement",
+    "method": "POST",
+    "path": "/bars/{barId}/setannouncement",
+    "summary": "Add new announcement into the bar",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "DELETE /bars/{barId}/queue/{musicId}",
+    "method": "DELETE",
+    "path": "/bars/{barId}/queue/{musicId}",
+    "summary": "Delete new music into the queue",
+    "tags": [
+      "Bars"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /bars/{barId}/clear-queue",
+    "method": "DELETE",
+    "path": "/bars/{barId}/clear-queue",
+    "summary": "Clear the queue",
+    "tags": [
+      "Bars"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "DELETE /bars/{barId}/clear-queue/{playlistId}",
+    "method": "DELETE",
+    "path": "/bars/{barId}/clear-queue/{playlistId}",
+    "summary": "Clear the queue by playlistId",
+    "tags": [
+      "Bars"
+    ],
+    "class": "destructive",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /bars/{barId}/set-dj-name",
+    "method": "POST",
+    "path": "/bars/{barId}/set-dj-name",
+    "summary": "Set DJ on bar object",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /bars/{barId}/venueEffect",
+    "method": "POST",
+    "path": "/bars/{barId}/venueEffect",
+    "summary": "Play a venue effect",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "POST /bars/switchSource",
+    "method": "POST",
+    "path": "/bars/switchSource",
+    "summary": "Switch venue music source",
+    "tags": [
+      "Bars"
+    ],
+    "class": "user_write",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /bars/{barId}/feed",
+    "method": "GET",
+    "path": "/bars/{barId}/feed",
+    "summary": "Get feed information for a specific bar",
+    "tags": [
+      "Bars"
+    ],
+    "class": "safe_read",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /admin/users",
+    "method": "GET",
+    "path": "/admin/users",
+    "summary": "Get all users",
+    "tags": [
+      "ADMIN"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /admin/users",
+    "method": "POST",
+    "path": "/admin/users",
+    "summary": "Create new user",
+    "tags": [
+      "ADMIN"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  },
+  {
+    "key": "GET /admin/requests",
+    "method": "GET",
+    "path": "/admin/requests",
+    "summary": "Get all requests",
+    "tags": [
+      "ADMIN"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /admin/moderations/all",
+    "method": "GET",
+    "path": "/admin/moderations/all",
+    "summary": "Get counts of flagged content by user",
+    "tags": [
+      "ADMIN"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /key/bars/{environment}/{barId}/getannouncement",
+    "method": "GET",
+    "path": "/key/bars/{environment}/{barId}/getannouncement",
+    "summary": "Get a single bar by the barId",
+    "tags": [
+      "API"
+    ],
+    "class": "operator_admin",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "GET /key/bars/{environment}/{barId}/getplaylist",
+    "method": "GET",
+    "path": "/key/bars/{environment}/{barId}/getplaylist",
+    "summary": "Get a current music playlist in the bar",
+    "tags": [
+      "API"
+    ],
+    "class": "operator_admin",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "barId",
+        "required": true
+      }
+    ],
+    "bodyContentTypes": []
+  },
+  {
+    "key": "POST /key/bars/{environment}/{barId}/peoples",
+    "method": "POST",
+    "path": "/key/bars/{environment}/{barId}/peoples",
+    "summary": "Add people count to the bar",
+    "tags": [
+      "API"
+    ],
+    "class": "operator_admin",
+    "parameters": [],
+    "bodyContentTypes": [
+      "application/json"
+    ]
+  }
+]

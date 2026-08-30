@@ -1,0 +1,47 @@
+name: NiteOut K6 Performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "smoke/load/stress/soak"
+        required: true
+        default: "smoke"
+      vus:
+        description: "Total target VUs (load/soak); stress uses 2x"
+        required: true
+        default: "50"
+      duration:
+        description: "Steady-state duration"
+        required: true
+        default: "10m"
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Execute NiteOut performance test
+        env:
+          K6_BASE_URL: ${{ secrets.K6_BASE_URL }}
+          K6_TEST_TOKEN_AUTH: ${{ secrets.K6_TEST_TOKEN_AUTH }}
+          K6_VENUE_IDS: ${{ secrets.K6_VENUE_IDS }}
+          K6_EVENT_ID: ${{ secrets.K6_EVENT_ID }}
+          K6_ENVIRONMENT: performance
+          LOAD_GENERATOR: ci
+          VUS: ${{ inputs.vus }}
+          TEST_DURATION: ${{ inputs.duration }}
+          TEST_PROFILE: ${{ inputs.profile }}
+          SESSION_SECONDS: "60"
+          HEARTBEAT_SECONDS: "15"
+          ENABLE_WRITES: "false"
+          ENABLE_LIVE_ACTIVITY: "false"
+        run: |
+          mkdir -p reports
+          k6 run --summary-export=reports/summary.json scripts/performance.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results
+          path: reports/
