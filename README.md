@@ -49,10 +49,15 @@ Reports are written to `reports/final-<profile>-<timestamp>.*`.
 
 Actions → **NiteOut K6 Performance** → Run workflow → enter **`vus`** only (e.g. `50`, `100`, `600`).
 
-Users are concurrent and split across 3 venues (`600` → `200` per venue). Duration/session/heartbeat/writes are fixed defaults.
+Users are concurrent and split across 3 venues (`600` → `200` per venue).
 
-**Secret:** `K6_TEST_TOKEN_AUTH`  
-Optional: `K6_BASE_URL`, `K6_VENUE_IDS`
+**Secret (required):** `K6_TEST_TOKEN_AUTH`
+
+**Clickable reports:** enable **Settings → Pages → Source: GitHub Actions**. After a run, open the job **Summary** for HTML links (`/latest/`).
+
+**Grafana (optional):** add `K6_PROMETHEUS_RW_SERVER_URL`, `K6_PROMETHEUS_RW_USERNAME`, `K6_PROMETHEUS_RW_PASSWORD` (Grafana Cloud). Import `observability/grafana/dashboards/niteout-k6-overview.json`.
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
 ## Target
 

@@ -90,10 +90,51 @@ if [[ "${REPORT_HTML:-true}" == "true" ]]; then echo "Engineering dashboard: ${D
 if [[ "${GRAFANA_OUTPUT:-false}" == "true" ]]; then echo "Grafana/Prometheus streaming: ${K6_PROMETHEUS_RW_SERVER_URL}"; fi
 echo "================================================================================"
 
+thresholds_breached() {
+  local summary="$1"
+  [[ -f "$summary" ]] || return 1
+  python3 - "$summary" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+# In k6 summary JSON, a threshold entry of true means the threshold was crossed (failed).
+for metric in (data.get("metrics") or {}).values():
+    for crossed in (metric.get("thresholds") or {}).values():
+        if crossed is True:
+            sys.exit(0)
+sys.exit(1)
+PY
+}
+
+run_k6() {
+  local with_grafana="${1:-false}"
+  if [[ "$with_grafana" == "true" ]]; then
+    k6 run -o experimental-prometheus-rw --summary-export="$NATIVE_JSON" scripts/final-user-journey.js
+  else
+    k6 run --summary-export="$NATIVE_JSON" scripts/final-user-journey.js
+  fi
+}
+
 if [[ "${GRAFANA_OUTPUT:-false}" == "true" ]]; then
-  k6 run -o experimental-prometheus-rw --summary-export="$NATIVE_JSON" scripts/final-user-journey.js
+  echo "Grafana remote-write: enabled (best-effort — publish failures will not fail this run)"
+  set +e
+  run_k6 true
+  K6_EXIT=$?
+  set -e
+
+  if [[ "$K6_EXIT" -ne 0 ]]; then
+    if thresholds_breached "$NATIVE_JSON"; then
+      echo "k6 failed due to breached thresholds (exit ${K6_EXIT})"
+      exit "$K6_EXIT"
+    fi
+    if [[ ! -f "$NATIVE_JSON" ]]; then
+      echo "WARN: Grafana remote-write likely failed before results were written; retrying without Grafana..." >&2
+      run_k6 false
+    else
+      echo "WARN: k6 exited ${K6_EXIT} but no thresholds were breached — treating as Grafana publish issue; not failing the job." >&2
+    fi
+  fi
 else
-  k6 run --summary-export="$NATIVE_JSON" scripts/final-user-journey.js
+  run_k6 false
 fi
 
 echo

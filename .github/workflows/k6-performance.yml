@@ -1,7 +1,7 @@
 name: NiteOut K6 Performance
 
-# Manual run: enter total VUs only. They split round-robin across 3 venues
-# (e.g. 600 → 200 per venue). Auth via GET /tests/token (secret K6_TEST_TOKEN_AUTH).
+# Enter total VUs only (e.g. 50 / 100 / 600) → split across 3 venues.
+# Reports: clickable GitHub Pages link + optional Grafana Cloud live metrics.
 on:
   workflow_dispatch:
     inputs:
@@ -14,11 +14,18 @@ concurrency:
   group: niteout-k6-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   k6:
     name: ${{ inputs.vus }} concurrent users
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      report_slug: ${{ steps.meta.outputs.report_slug }}
 
     env:
       K6_TEST_TOKEN_AUTH: ${{ secrets.K6_TEST_TOKEN_AUTH }}
@@ -27,6 +34,10 @@ jobs:
       K6_EVENT_ID: ${{ secrets.K6_EVENT_ID }}
       K6_GROUP_ID: ${{ secrets.K6_GROUP_ID }}
       K6_CHAT_USER_UUID: ${{ secrets.K6_CHAT_USER_UUID }}
+      # Optional Grafana Cloud (Prometheus remote write)
+      K6_PROMETHEUS_RW_SERVER_URL: ${{ secrets.K6_PROMETHEUS_RW_SERVER_URL }}
+      K6_PROMETHEUS_RW_USERNAME: ${{ secrets.K6_PROMETHEUS_RW_USERNAME }}
+      K6_PROMETHEUS_RW_PASSWORD: ${{ secrets.K6_PROMETHEUS_RW_PASSWORD }}
       K6_ENVIRONMENT: ci
       LOAD_GENERATOR: ci
 
@@ -55,6 +66,7 @@ jobs:
         uses: grafana/setup-k6-action@v1
 
       - name: Prepare env
+        id: meta
         shell: bash
         run: |
           set -euo pipefail
@@ -75,24 +87,26 @@ jobs:
           } >> .env
 
           VUS="${{ inputs.vus }}"
+          REPORT_SLUG="${VUS}vus-run${GITHUB_RUN_ID}"
 
-          # Fixed concurrent session model (same as local). Only VUS changes.
           if (( VUS == 1 )); then
-            PROFILE=smoke
-            DURATION=45s
-            SESSION=15
+            PROFILE=smoke; DURATION=45s; SESSION=15
           elif (( VUS >= 600 )); then
-            PROFILE=ci
-            DURATION=30m
-            SESSION=120
+            PROFILE=ci; DURATION=30m; SESSION=120
           elif (( VUS >= 100 )); then
-            PROFILE=ci
-            DURATION=10m
-            SESSION=60
+            PROFILE=ci; DURATION=10m; SESSION=60
           else
-            PROFILE=ci
-            DURATION=7m
-            SESSION=60
+            PROFILE=ci; DURATION=7m; SESSION=60
+          fi
+
+          # Stream live metrics to Grafana Cloud when remote-write secrets exist.
+          # Missing/invalid Grafana config must never fail the job.
+          if [[ -n "${K6_PROMETHEUS_RW_SERVER_URL:-}" && -n "${K6_PROMETHEUS_RW_USERNAME:-}" && -n "${K6_PROMETHEUS_RW_PASSWORD:-}" ]]; then
+            GRAFANA_OUTPUT=true
+            echo "Grafana Cloud remote-write: enabled (best-effort)"
+          else
+            GRAFANA_OUTPUT=false
+            echo "::notice::Grafana Cloud remote-write skipped (optional K6_PROMETHEUS_RW_* secrets not set)"
           fi
 
           cat > ".env.${PROFILE}" <<EOF
@@ -107,12 +121,14 @@ jobs:
           LOAD_GENERATOR=ci
           ALLOW_SHARED_WRITE_IDENTITY=true
           REPORT_HTML=true
-          GRAFANA_OUTPUT=false
+          GRAFANA_OUTPUT=${GRAFANA_OUTPUT}
           EOF
           sed -i 's/^[[:space:]]*//' ".env.${PROFILE}"
 
           echo "PROFILE=${PROFILE}" >> "$GITHUB_ENV"
-          echo "K6_VENUE_IDS=${K6_VENUE_IDS}" >> "$GITHUB_ENV"
+          echo "REPORT_SLUG=${REPORT_SLUG}" >> "$GITHUB_ENV"
+          echo "GRAFANA_OUTPUT=${GRAFANA_OUTPUT}" >> "$GITHUB_ENV"
+          echo "report_slug=${REPORT_SLUG}" >> "$GITHUB_OUTPUT"
 
           IFS=',' read -r -a venues <<< "${K6_VENUE_IDS}"
           n=${#venues[@]}
@@ -121,14 +137,47 @@ jobs:
             echo "## Run"
             echo "- **${VUS} concurrent users** → ~**${per} per venue** across ${n} venues"
             echo "- Duration \`${DURATION}\`, session ${SESSION}s, heartbeat 15s"
-            echo "- Auth: GET /tests/token · writes: on"
+            echo "- Grafana stream: \`${GRAFANA_OUTPUT}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run
         shell: bash
         run: ./scripts/run-final.sh "${PROFILE}"
 
-      - name: Upload reports
+      - name: Stage site for GitHub Pages
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "site/${REPORT_SLUG}" site/latest
+          CLIENT=$(ls -t reports/*-client-report.html 2>/dev/null | head -1 || true)
+          DASH=$(ls -t reports/*-dashboard.html 2>/dev/null | head -1 || true)
+          if [[ -z "${CLIENT}" ]]; then
+            echo "No client report found"; exit 0
+          fi
+          cp "$CLIENT" "site/${REPORT_SLUG}/index.html"
+          cp "$CLIENT" site/latest/index.html
+          if [[ -n "${DASH}" ]]; then
+            cp "$DASH" "site/${REPORT_SLUG}/dashboard.html"
+            cp "$DASH" site/latest/dashboard.html
+          fi
+          cat > site/index.html <<EOF
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>NiteOut k6 reports</title>
+          <meta http-equiv="refresh" content="0; url=./latest/">
+          <p>Redirecting to <a href="./latest/">latest report</a>.</p>
+          EOF
+          # Keep a tiny history index for this run folder
+          {
+            echo "<!doctype html><meta charset=utf-8><title>Run ${REPORT_SLUG}</title>"
+            echo "<h1>Run ${REPORT_SLUG}</h1><ul>"
+            echo "<li><a href=\"./index.html\">Client report</a></li>"
+            [[ -f "site/${REPORT_SLUG}/dashboard.html" ]] && echo "<li><a href=\"./dashboard.html\">k6 dashboard</a></li>"
+            echo "</ul><p><a href=\"../latest/\">Latest</a></p>"
+          } > "site/${REPORT_SLUG}/README.html"
+
+      - name: Upload raw reports artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -136,3 +185,35 @@ jobs:
           path: reports/
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  pages:
+    name: Publish clickable report
+    needs: k6
+    if: always() && needs.k6.result != 'cancelled'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report links
+        shell: bash
+        run: |
+          BASE="${{ steps.deployment.outputs.page_url }}"
+          BASE="${BASE%/}"
+          SLUG="${{ needs.k6.outputs.report_slug }}"
+          {
+            echo "## Open results"
+            echo "- [Latest client report](${BASE}/latest/)"
+            echo "- [This run](${BASE}/${SLUG}/)"
+            echo "- [k6 time-series dashboard (latest)](${BASE}/latest/dashboard.html)"
+          } >> "$GITHUB_STEP_SUMMARY"
