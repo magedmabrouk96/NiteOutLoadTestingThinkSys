@@ -19,10 +19,19 @@ The one-time Mobile coverage operations run only with the `coverage` profile. Th
 
 ## Authentication
 
-Do not store the Firebase token in `.env`.
+Every run bootstraps auth once in k6 `setup()` via `GET /tests/token`, using `K6_TEST_TOKEN_AUTH` from `.env`. The returned Firebase JWT is shared by all VUs for the suite.
 
 ```bash
-export K6_FIREBASE_TOKEN="<fresh Firebase ID token>"
+# Already set in .env (single-quoted — value contains $ characters):
+# K6_TEST_TOKEN_AUTH='$5$...'
+```
+
+Optional overrides if you need them:
+
+```bash
+export K6_FIREBASE_TOKEN="<fresh Firebase ID token>"   # skip /tests/token
+# or
+export K6_TOKEN_FILE=./tokens.txt                      # multi-user pool
 ```
 
 All other known configuration/test data is already in `.env`.
@@ -36,7 +45,27 @@ All other known configuration/test data is already in `.env`.
 ./scripts/run-final.sh target-600
 ```
 
-Reports are written to `reports/final-<profile>-<timestamp>.json`.
+Reports are written to `reports/final-<profile>-<timestamp>.*`.
+
+### GitHub Actions
+
+Manual workflow: **NiteOut K6 Performance** (Actions → Run workflow).
+
+| Input | Role |
+|---|---|
+| `vus` | Total concurrent users — split round-robin across the 3 venues (`≈ vus/3` each) |
+| `duration` | Ramp/hold length (`7m`, `30m`, …) |
+| `session_seconds` / `heartbeat_seconds` | Per-iteration session model |
+| `enable_runtime_writes` | Probabilistic chat/RSVP writes |
+| `allow_high_ci_load` | Required if `vus > 100` on `ubuntu-latest` |
+
+**Secret required:** `K6_TEST_TOKEN_AUTH` (same static bearer used for `GET /tests/token`).
+
+Optional secrets: `K6_BASE_URL`, `K6_VENUE_IDS` (defaults to the three local venues), `K6_EVENT_ID`, `K6_GROUP_ID`, `K6_CHAT_USER_UUID`.
+
+Examples: `vus=50` → ~17/venue; `vus=100` → ~33/venue; `vus=600` → 200/venue (set `allow_high_ci_load=true`; prefer a dedicated generator for 600).
+
+Artifacts upload the `reports/` folder (client HTML + detailed JSON + k6 summary).
 
 ## Client target
 
@@ -44,7 +73,7 @@ Reports are written to `reports/final-<profile>-<timestamp>.json`.
 
 ## Important identity note
 
-A single exported `K6_FIREBASE_TOKEN` means all VUs authenticate as the same Firebase test identity. This is enough for endpoint/load generation, but a production-representative 600-user write test should use `K6_TOKEN_FILE` with multiple test-user Firebase tokens if the client can provide them.
+A single `K6_TEST_TOKEN_AUTH` / `K6_FIREBASE_TOKEN` means all VUs authenticate as the same Firebase test identity. This is enough for endpoint/load generation, but a production-representative 600-user write test should use `K6_TOKEN_FILE` with multiple test-user Firebase tokens if the client can provide them.
 
 ## Excluded endpoint
 
