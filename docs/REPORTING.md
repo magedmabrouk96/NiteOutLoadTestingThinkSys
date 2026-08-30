@@ -1,4 +1,4 @@
-# NiteOut Reporting (v9.3)
+# NiteOut Reporting
 
 Each run produces four outputs:
 
