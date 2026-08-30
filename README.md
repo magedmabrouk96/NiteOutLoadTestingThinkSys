@@ -47,25 +47,14 @@ Reports are written to `reports/final-<profile>-<timestamp>.*`.
 
 ### GitHub Actions
 
-Manual workflow: **NiteOut K6 Performance** (Actions → Run workflow).
+Actions → **NiteOut K6 Performance** → Run workflow → enter **`vus`** only (e.g. `50`, `100`, `600`).
 
-| Input | Role |
-|---|---|
-| `vus` | Total concurrent users — split round-robin across the 3 venues (`≈ vus/3` each) |
-| `duration` | Ramp/hold length (`7m`, `30m`, …) |
-| `session_seconds` / `heartbeat_seconds` | Per-iteration session model |
-| `enable_runtime_writes` | Probabilistic chat/RSVP writes |
-| `allow_high_ci_load` | Required if `vus > 100` on `ubuntu-latest` |
+Users are concurrent and split across 3 venues (`600` → `200` per venue). Duration/session/heartbeat/writes are fixed defaults.
 
-**Secret required:** `K6_TEST_TOKEN_AUTH` (same static bearer used for `GET /tests/token`).
+**Secret:** `K6_TEST_TOKEN_AUTH`  
+Optional: `K6_BASE_URL`, `K6_VENUE_IDS`
 
-Optional secrets: `K6_BASE_URL`, `K6_VENUE_IDS` (defaults to the three local venues), `K6_EVENT_ID`, `K6_GROUP_ID`, `K6_CHAT_USER_UUID`.
-
-Examples: `vus=50` → ~17/venue; `vus=100` → ~33/venue; `vus=600` → 200/venue (set `allow_high_ci_load=true`; prefer a dedicated generator for 600).
-
-Artifacts upload the `reports/` folder (client HTML + detailed JSON + k6 summary).
-
-## Client target
+## Target
 
 `.env.target-600` is configured for 600 concurrent sessions across the three venue IDs in `.env`. `venueForVu()` distributes VUs round-robin, producing 200 VUs per venue when VUS=600 and three venue IDs are configured.
 
