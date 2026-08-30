@@ -9,9 +9,9 @@ Each run produces four outputs:
 
 ## Status colors
 
-- **Green / PASS**: endpoint has no failures and is comfortably inside the provisional performance threshold.
-- **Amber / WATCH**: endpoint is at or above 80% of its p95 or p99 provisional threshold and should be monitored as load increases.
-- **Red / FAIL**: endpoint has request failures or breaches its configured p95/p99 provisional threshold.
+- **Green / PASS**: no request failures; within provisional SLO (see `docs/THRESHOLDS.md`).
+- **Amber / WATCH**: at or above 85% of the provisional SLO (error-budget burn).
+- **Red / FAIL**: request failures, or latency SLO breached (load/coverage only — smoke does not fail on latency).
 
 ## Recommended use
 
@@ -27,4 +27,4 @@ The report explicitly states that concurrent VUs use the single client-provided 
 - The **API Coverage Matrix** lists all endpoints known to the final journey even when a load profile intentionally does not execute one-time profile/onboarding writes.
 - `COVERAGE ONLY` means the endpoint was validated in the single-user coverage run and is intentionally not repeated under concurrent load.
 - `EXCLUDED` means the endpoint was removed from scope by explicit client confirmation.
-- Response-time limits are labelled **Provisional Performance Thresholds**, not SLAs. They are QA-defined trend/quality gates until the client provides formal performance acceptance criteria.
+- Response-time limits are labelled **Provisional SLO Gates**, not contractual SLAs. Model and numbers live in `src/slo.js` / `docs/THRESHOLDS.md`.

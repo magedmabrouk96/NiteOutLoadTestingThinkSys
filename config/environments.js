@@ -1,38 +1,10 @@
+import { thresholdsForProfile } from '../src/slo.js';
+
 function bool(name, fallback='false') { return (__ENV[name] || fallback).toLowerCase() === 'true'; }
 function num(name, fallback) { const n=Number(__ENV[name]); return Number.isFinite(n) && n>0 ? n : fallback; }
 function ratio(name, fallback) { const n=Number(__ENV[name]); return Number.isFinite(n) && n>=0 && n<=1 ? n : fallback; }
 
 const TEST_PROFILE = (__ENV.TEST_PROFILE || 'load').toLowerCase();
-const COVERAGE_THRESHOLDS = {
-  transport_error_rate: ['rate<0.01'],
-  application_error_rate: ['rate<0.01'],
-  checks: ['rate>0.99'],
-  // Coverage is a one-user functional/API-contract gate. Rare uploads/profile
-  // mutations are intentionally slower and are reported endpoint-by-endpoint.
-  'http_req_duration{api_group:venue}': ['p(95)<1500','p(99)<2500'],
-  'http_req_duration{api_group:music}': ['p(95)<1500','p(99)<2500'],
-  'http_req_duration{api_group:events}': ['p(95)<1500','p(99)<2500'],
-  'http_req_duration{api_group:social}': ['p(95)<1500','p(99)<2500'],
-  'http_req_duration{api_group:chat}': ['p(95)<3000','p(99)<4000'],
-  'http_req_duration{api_group:mobile}': ['p(95)<5000','p(99)<6000'],
-  'http_req_duration{api_group:profile}': ['p(95)<5000','p(99)<6000'],
-  heartbeat_success: ['rate>0.99'],
-  journey_success: ['rate>0.98'],
-};
-const LOAD_THRESHOLDS = {
-  transport_error_rate: ['rate<0.01'],
-  application_error_rate: ['rate<0.01'],
-  checks: ['rate>0.99'],
-  'http_req_duration{api_group:venue}': ['p(95)<1000','p(99)<2000'],
-  'http_req_duration{api_group:music}': ['p(95)<1200','p(99)<2500'],
-  'http_req_duration{api_group:events}': ['p(95)<1000','p(99)<2000'],
-  'http_req_duration{api_group:social}': ['p(95)<1200','p(99)<2500'],
-  'http_req_duration{api_group:chat}': ['p(95)<1500','p(99)<3000'],
-  'http_req_duration{api_group:mobile}': ['p(95)<1500','p(99)<3000'],
-  'http_req_duration{api_group:profile}': ['p(95)<1500','p(99)<3000'],
-  heartbeat_success: ['rate>0.99'],
-  journey_success: ['rate>0.98'],
-};
 
 export const ENV = {
   baseUrl: (__ENV.K6_BASE_URL || 'https://us-central1-niteout-c7d45.cloudfunctions.net/dev_api').replace(/\/$/, ''),
@@ -103,6 +75,7 @@ export const ENV = {
   chatWriteProbability: ratio('CHAT_WRITE_PROBABILITY', 0.20),
   rsvpWriteProbability: ratio('RSVP_WRITE_PROBABILITY', 0.10),
 
-  thresholds: TEST_PROFILE === 'coverage' ? COVERAGE_THRESHOLDS : LOAD_THRESHOLDS,
+  // Provisional SLOs — single source of truth in src/slo.js
+  thresholds: thresholdsForProfile(TEST_PROFILE),
 };
 export function url(path) { return `${ENV.baseUrl}${path}`; }

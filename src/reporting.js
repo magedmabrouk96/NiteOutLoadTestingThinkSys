@@ -1,4 +1,5 @@
 import { ENDPOINT_DEFINITIONS } from './endpoint-metrics.js';
+import { sloForEndpoint, SLO_WARN_RATIO } from './slo.js';
 
 function n(v, fallback=0) { return Number.isFinite(Number(v)) ? Number(v) : fallback; }
 function metric(data,name){ return data?.metrics?.[name]?.values || {}; }
@@ -39,20 +40,8 @@ function endpointRows(data){
 }
 function section(title){ return `\n${'='.repeat(118)}\n${title}\n${'='.repeat(118)}\n`; }
 
-function slaForEndpoint(e, profile){
-  const coverage = profile === 'coverage';
-  if (e.id === 'post_chat') return coverage ? {p95:3000,p99:4000,label:'Chat'} : {p95:1500,p99:3000,label:'Chat'};
-  if (['get_music','get_announcement'].includes(e.id)) return coverage ? {p95:1500,p99:2500,label:'Music / heartbeat'} : {p95:1200,p99:2500,label:'Music / heartbeat'};
-  if (['get_bars','get_bar','get_queue'].includes(e.id)) return coverage ? {p95:1500,p99:2500,label:'Venue'} : {p95:1000,p99:2000,label:'Venue'};
-  if (['setup_events','get_current_events','get_event_rsvp','post_event_rsvp'].includes(e.id)) return coverage ? {p95:1500,p99:2500,label:'Events'} : {p95:1000,p99:2000,label:'Events'};
-  if (['get_users','get_invite_code','get_blocked','get_who_blocked','get_leaderboard'].includes(e.id)) return coverage ? {p95:1500,p99:2500,label:'Social'} : {p95:1200,p99:2500,label:'Social'};
-  if (['post_waitinglist','post_handle_check','post_handle','post_profile','post_profile_image','post_group_chat_image'].includes(e.id)) {
-    return coverage ? {p95:5000,p99:6000,label:'Mobile / profile'} : {p95:1500,p99:3000,label:'Mobile / profile'};
-  }
-  return null;
-}
 function endpointAssessment(e, profile){
-  const sla=slaForEndpoint(e,profile);
+  const sla=sloForEndpoint(e.id, profile);
   if(e.fail>0) return {status:'FAIL',severity:'HIGH',reason:`${e.fail} request${e.fail===1?'':'s'} failed`,sla};
   if(sla && (e.p95>sla.p95 || e.p99>sla.p99)) {
     const reasons=[];
@@ -60,16 +49,16 @@ function endpointAssessment(e, profile){
     if(e.p99>sla.p99) reasons.push(`p99 ${fmtMs(e.p99)} > ${fmtMs(sla.p99)}`);
     return {status:'FAIL',severity:'HIGH',reason:reasons.join('; '),sla};
   }
-  if(sla && (e.p95>=sla.p95*0.8 || e.p99>=sla.p99*0.8)) {
-    return {status:'WARN',severity:'WATCH',reason:`Approaching provisional threshold (${fmtMs(e.p95)} p95 / ${fmtMs(e.p99)} p99)`,sla};
+  if(sla && (e.p95>=sla.p95*SLO_WARN_RATIO || e.p99>=sla.p99*SLO_WARN_RATIO)) {
+    return {status:'WARN',severity:'WATCH',reason:`Approaching provisional SLO (${fmtMs(e.p95)} p95 / ${fmtMs(e.p99)} p99 · tier ${sla.tier})`,sla};
   }
-  return {status:'PASS',severity:'OK',reason:'Within provisional performance threshold',sla};
+  return {status:'PASS',severity:'OK',reason:sla ? `Within provisional SLO (${sla.label})` : 'No request failures',sla};
 }
 function deriveIssues(result){
   const issues=[];
   for(const e of result.endpoints){
     const a=endpointAssessment(e,result.metadata.profile);
-    if(a.status!=='PASS') issues.push({type:'endpoint',status:a.status,severity:a.severity,title:`${e.method} ${e.endpoint}`,detail:a.reason,actual:`p95 ${fmtMs(e.p95)} · p99 ${fmtMs(e.p99)}`,sla:a.sla ? `Provisional threshold: p95 < ${fmtMs(a.sla.p95)} · p99 < ${fmtMs(a.sla.p99)}` : ''});
+    if(a.status!=='PASS') issues.push({type:'endpoint',status:a.status,severity:a.severity,title:`${e.method} ${e.endpoint}`,detail:a.reason,actual:`p95 ${fmtMs(e.p95)} · p99 ${fmtMs(e.p99)}`,sla:a.sla ? `Provisional SLO (${a.sla.tier}): p95 < ${fmtMs(a.sla.p95)} · p99 < ${fmtMs(a.sla.p99)}` : ''});
   }
   for(const t of result.thresholds.filter(x=>!x.ok)){
     if(issues.some(i=>t.metric.includes('chat') && i.title.includes('/chat/messages'))) continue;
@@ -178,9 +167,9 @@ export function detailedConsoleSummary(data, meta={}){
     out+=`${pad(c.coverageStatus,14)} ${pad(c.runStatus,14)} ${pad(c.method,6)} ${pad(c.endpoint,36)} ${pad(fmtInt(c.calls),6,'left')} ${c.note}\n`;
   }
 
-  out+=section('PROVISIONAL PERFORMANCE THRESHOLDS');
+  out+=section('PROVISIONAL SLO GATES');
   for(const t of r.thresholds){ out+=`${t.ok?'PASS':'FAIL'}  ${pad(t.metric,52)} ${t.expression}\n`; }
-  if(!r.thresholds.length) out+='No thresholds configured.\n';
+  if(!r.thresholds.length) out+='No SLO gates configured.\n';
 
   out+=section('FINAL RESULT');
   out+=r.finalPass ? '>>> TEST PASSED <<<\n' : '>>> TEST FAILED — REVIEW ISSUES / FAILED GATES ABOVE <<<\n';
@@ -225,9 +214,9 @@ export function clientHtmlReport(data, meta={}){
   </div>
   <div class="section"><h2>${failed.length?'Issues Requiring Attention':'Executive Summary'}</h2>${issuesHtml}</div>
   <div class="section"><h2>API Coverage Matrix</h2><div class="note"><strong>How to read this table:</strong> every in-scope endpoint remains visible in load reports. <strong>EXECUTED</strong> means it ran in this load test. <strong>COVERAGE ONLY</strong> means it was already validated in the one-user coverage run but is intentionally not repeated concurrently because all VUs share the same client-provided test identity. <strong>EXCLUDED</strong> reflects explicit client confirmation.</div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Coverage</th><th>This Run</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Reason / Scope Note</th></tr></thead><tbody>${coverageHtml}</tbody></table></div></div>
-  <div class="section"><h2>Endpoint Performance — Executed This Run</h2><div class="table-wrap"><table><thead><tr><th>Status</th><th>Phase</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Pass</th><th>Fail</th><th>Pass %</th><th>Avg</th><th>p95</th><th>p99</th><th>Max</th><th>Provisional p95 / p99</th></tr></thead><tbody>${endpointRowsHtml}</tbody></table></div></div>
+  <div class="section"><h2>Endpoint Performance — Executed This Run</h2><div class="table-wrap"><table><thead><tr><th>Status</th><th>Phase</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Pass</th><th>Fail</th><th>Pass %</th><th>Avg</th><th>p95</th><th>p99</th><th>Max</th><th>Provisional SLO p95 / p99</th></tr></thead><tbody>${endpointRowsHtml}</tbody></table></div></div>
   <div class="section"><h2>Slowest Endpoints by p95</h2><table><thead><tr><th>#</th><th>Endpoint</th><th>Avg</th><th>p95</th><th>p99</th><th>Max</th></tr></thead><tbody>${slowHtml}</tbody></table></div>
-  <div class="section"><h2>Provisional Performance Thresholds</h2><div class="note"><strong>Important:</strong> These response-time thresholds are QA-defined provisional performance gates for trend detection. They have not been provided or approved by the client as contractual SLAs.</div><div style="height:12px"></div><table><thead><tr><th>Status</th><th>Metric</th><th>Threshold</th></tr></thead><tbody>${thresholdHtml}</tbody></table></div>
+  <div class="section"><h2>Provisional SLO Gates</h2><div class="note"><strong>Model:</strong> Reliability gates always apply. Latency SLOs are tiered by criticality (interactive / browse / write / heavy). Smoke fails on reliability only. Values are QA provisional — not client-approved contractual SLAs. See <code>src/slo.js</code>.</div><div style="height:12px"></div><table><thead><tr><th>Status</th><th>Metric</th><th>Gate</th></tr></thead><tbody>${thresholdHtml}</tbody></table></div>
   <div class="section scope"><div><h2>Test Configuration</h2><p><strong>Sessions:</strong> ${esc(r.metadata.configuredVUs)} VUs · <strong>Duration:</strong> ${esc(r.metadata.configuredDuration)} · <strong>Session:</strong> ${esc(r.metadata.sessionSeconds)}s · <strong>Heartbeat:</strong> ${esc(r.metadata.heartbeatSeconds)}s</p><h3>Venue configuration</h3><ul>${venues||'<li>Not specified</li>'}</ul></div><div><h2>Scope & Assumptions</h2><div class="note"><strong>Authenticated test user:</strong> ${esc(r.metadata.testUserIdentity)}<br><strong>Authentication model:</strong> ${esc(r.metadata.authModel)}.</div><h3>Client-confirmed exclusions</h3><ul>${(r.metadata.excludedEndpoints||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>
   <div class="footer">NiteOut k6 Performance Framework · Client-facing report · Raw k6 dashboard and JSON artifacts are retained separately for engineering analysis.</div>
   </div></body></html>`;
