@@ -1,47 +1,185 @@
 name: NiteOut K6 Performance
 
+# Manual runs only. Pass total VUs; they are split round-robin across the 3 configured venues
 on:
   workflow_dispatch:
     inputs:
-      profile:
-        description: "smoke/load/stress/soak"
-        required: true
-        default: "smoke"
       vus:
-        description: "Total target VUs (load/soak); stress uses 2x"
+        description: "Total concurrent users (split across 3 venues, e.g. 50 ≈ 17+17+16)"
         required: true
         default: "50"
       duration:
-        description: "Steady-state duration"
+        description: "Total ramp/hold duration (e.g. 45s, 7m, 30m)"
         required: true
-        default: "10m"
+        default: "7m"
+      session_seconds:
+        description: "Active venue session length per iteration (seconds)"
+        required: true
+        default: "60"
+      heartbeat_seconds:
+        description: "Heartbeat poll interval (seconds)"
+        required: true
+        default: "15"
+      enable_runtime_writes:
+        description: "Enable probabilistic chat/RSVP writes during the journey"
+        type: boolean
+        required: true
+        default: true
+      allow_high_ci_load:
+        description: "Allow VUS > 100 on the GitHub-hosted runner (results may be generator-bound)"
+        type: boolean
+        required: true
+        default: false
+
+concurrency:
+  group: niteout-k6-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   k6:
+    name: Final journey (${{ inputs.vus }} VUs)
     runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      # Secrets (required): K6_TEST_TOKEN_AUTH
+      # Optional secrets: K6_BASE_URL, K6_VENUE_IDS, K6_EVENT_ID, K6_GROUP_ID, K6_CHAT_USER_UUID
+      K6_TEST_TOKEN_AUTH: ${{ secrets.K6_TEST_TOKEN_AUTH }}
+      K6_BASE_URL: ${{ secrets.K6_BASE_URL }}
+      K6_VENUE_IDS: ${{ secrets.K6_VENUE_IDS }}
+      K6_EVENT_ID: ${{ secrets.K6_EVENT_ID }}
+      K6_GROUP_ID: ${{ secrets.K6_GROUP_ID }}
+      K6_CHAT_USER_UUID: ${{ secrets.K6_CHAT_USER_UUID }}
+      K6_ENVIRONMENT: ci
+      LOAD_GENERATOR: ci
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: grafana/setup-k6-action@v1
-      - name: Execute NiteOut performance test
-        env:
-          K6_BASE_URL: ${{ secrets.K6_BASE_URL }}
-          K6_TEST_TOKEN_AUTH: ${{ secrets.K6_TEST_TOKEN_AUTH }}
-          K6_VENUE_IDS: ${{ secrets.K6_VENUE_IDS }}
-          K6_EVENT_ID: ${{ secrets.K6_EVENT_ID }}
-          K6_ENVIRONMENT: performance
-          LOAD_GENERATOR: ci
-          VUS: ${{ inputs.vus }}
-          TEST_DURATION: ${{ inputs.duration }}
-          TEST_PROFILE: ${{ inputs.profile }}
-          SESSION_SECONDS: "60"
-          HEARTBEAT_SECONDS: "15"
-          ENABLE_WRITES: "false"
-          ENABLE_LIVE_ACTIVITY: "false"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs and secrets
+        shell: bash
         run: |
-          mkdir -p reports
-          k6 run --summary-export=reports/summary.json scripts/performance.js
-      - uses: actions/upload-artifact@v4
+          set -euo pipefail
+
+          if [[ -z "${K6_TEST_TOKEN_AUTH:-}" ]]; then
+            echo "::error::Missing secret K6_TEST_TOKEN_AUTH (static bearer for GET /tests/token)"
+            exit 1
+          fi
+
+          VUS="${{ inputs.vus }}"
+          if ! [[ "$VUS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::vus must be a positive integer (got: ${VUS})"
+            exit 1
+          fi
+
+          if (( VUS > 100 )) && [[ "${{ inputs.allow_high_ci_load }}" != "true" ]]; then
+            echo "::error::VUS=${VUS} exceeds 100 on github-hosted runners. Re-run with allow_high_ci_load=true, or use a dedicated generator."
+            exit 1
+          fi
+
+          if (( VUS > 100 )); then
+            echo "::warning::VUS=${VUS} on ubuntu-latest may be limited by the runner (CPU/sockets). Treat results cautiously."
+          fi
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Prepare .env for CI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Non-secret defaults from the committed example; secrets/env override below.
+          cp .env.example .env
+
+          # Strip any committed example auth so the Actions secret always wins.
+          # Keep single-quote form if we rewrite later.
+          if grep -q '^K6_TEST_TOKEN_AUTH=' .env; then
+            sed -i '/^K6_TEST_TOKEN_AUTH=/d' .env
+          fi
+
+          # Defaults when optional secrets are unset (same 3 venues as local 50-user runs).
+          if [[ -z "${K6_BASE_URL:-}" ]]; then
+            export K6_BASE_URL="https://us-central1-niteout-c7d45.cloudfunctions.net/dev_api"
+          fi
+          if [[ -z "${K6_VENUE_IDS:-}" ]]; then
+            export K6_VENUE_IDS="2ec9b615-c3d6-4510-8c3c-4646a48b3f83,3155c272-76cd-483d-8f68-e52dfd66f33e,3552bfdf-ff05-4da7-a09b-b843d7e5bfe3"
+          fi
+
+          {
+            echo "K6_BASE_URL=${K6_BASE_URL}"
+            echo "K6_VENUE_IDS=${K6_VENUE_IDS}"
+            # Single-quote so bash does not expand $ in the crypt-like bearer.
+            echo "K6_TEST_TOKEN_AUTH='${K6_TEST_TOKEN_AUTH}'"
+            [[ -n "${K6_EVENT_ID:-}" ]] && echo "K6_EVENT_ID=${K6_EVENT_ID}"
+            [[ -n "${K6_GROUP_ID:-}" ]] && echo "K6_GROUP_ID=${K6_GROUP_ID}"
+            [[ -n "${K6_CHAT_USER_UUID:-}" ]] && echo "K6_CHAT_USER_UUID=${K6_CHAT_USER_UUID}"
+          } >> .env
+
+          VUS="${{ inputs.vus }}"
+          if (( VUS == 1 )); then
+            PROFILE=smoke
+            # Align smoke duration if the caller left the load default.
+            DURATION="${{ inputs.duration }}"
+            [[ "$DURATION" == "7m" ]] && DURATION="45s"
+          else
+            PROFILE=ci
+            DURATION="${{ inputs.duration }}"
+          fi
+
+          # Workflow inputs always win over profile file defaults.
+          cat > ".env.${PROFILE}" <<EOF
+          TEST_PROFILE=$([ "$PROFILE" = "smoke" ] && echo smoke || echo load)
+          VUS=${VUS}
+          TEST_DURATION=${DURATION}
+          SESSION_SECONDS=${{ inputs.session_seconds }}
+          HEARTBEAT_SECONDS=${{ inputs.heartbeat_seconds }}
+          HEARTBEAT_JITTER_SECONDS=2
+          ENABLE_RUNTIME_WRITES=${{ inputs.enable_runtime_writes }}
+          RUN_RARE_MOBILE_WRITES_ONCE=false
+          LOAD_GENERATOR=ci
+          ALLOW_SHARED_WRITE_IDENTITY=true
+          REPORT_HTML=true
+          GRAFANA_OUTPUT=false
+          EOF
+          # Trim leading spaces from heredoc if any
+          sed -i 's/^[[:space:]]*//' ".env.${PROFILE}"
+
+          echo "PROFILE=${PROFILE}" >> "$GITHUB_ENV"
+          echo "VUS=${VUS}" >> "$GITHUB_ENV"
+          echo "K6_BASE_URL=${K6_BASE_URL}" >> "$GITHUB_ENV"
+          echo "K6_VENUE_IDS=${K6_VENUE_IDS}" >> "$GITHUB_ENV"
+
+          IFS=',' read -r -a venues <<< "${K6_VENUE_IDS}"
+          n=${#venues[@]}
+          per=$(( VUS / n ))
+          rem=$(( VUS % n ))
+          {
+            echo "## NiteOut k6 run plan"
+            echo ""
+            echo "| Setting | Value |"
+            echo "|---|---|"
+            echo "| Profile | \`${PROFILE}\` |"
+            echo "| Total VUs | **${VUS}** |"
+            echo "| Duration | \`${DURATION}\` |"
+            echo "| Session / heartbeat | ${{ inputs.session_seconds }}s / ${{ inputs.heartbeat_seconds }}s |"
+            echo "| Runtime writes | ${{ inputs.enable_runtime_writes }} |"
+            echo "| Venues | ${n} |"
+            echo "| Approx VUs / venue | ~${per} (+${rem} remainder round-robin) |"
+            echo ""
+            echo "Distribution uses \`venues[(VU-1) % ${n}]\` — same as local \`./scripts/run-final.sh local\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run final user journey
+        shell: bash
+        run: ./scripts/run-final.sh "${PROFILE}"
+
+      - name: Upload reports
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: k6-results
+          name: niteout-k6-${{ inputs.vus }}vus-${{ github.run_id }}
           path: reports/
+          if-no-files-found: warn
+          retention-days: 30

@@ -15,14 +15,41 @@ source .env
 if [[ -f ".env.${PROFILE}" ]]; then
   source ".env.${PROFILE}"
 else
-  echo "ERROR: .env.${PROFILE} not found. Use: smoke | coverage | local | target-600" >&2
+  echo "ERROR: .env.${PROFILE} not found. Use: smoke | coverage | local | target-600 | ci" >&2
   exit 1
 fi
 set +a
 
-if [[ -z "${K6_FIREBASE_TOKEN:-}" && -z "${K6_TOKEN_FILE:-}" ]]; then
-  echo 'ERROR: export K6_FIREBASE_TOKEN="<fresh Firebase token>" before running.' >&2
+# Auth priority (resolved inside k6 setup):
+#   1) K6_TOKEN_FILE  2) K6_TEST_TOKEN_AUTH → GET /tests/token  3) K6_FIREBASE_TOKEN
+if [[ -z "${K6_FIREBASE_TOKEN:-}" && -z "${K6_TOKEN_FILE:-}" && -z "${K6_TEST_TOKEN_AUTH:-}" ]]; then
+  echo 'ERROR: set K6_TEST_TOKEN_AUTH in .env (auto-fetches JWT via GET /tests/token),' >&2
+  echo '       or export K6_FIREBASE_TOKEN / K6_TOKEN_FILE.' >&2
   exit 1
+fi
+
+if [[ -n "${K6_TOKEN_FILE:-}" ]]; then
+  AUTH_MODE="token-file (${K6_TOKEN_FILE})"
+elif [[ -n "${K6_TEST_TOKEN_AUTH:-}" ]]; then
+  AUTH_MODE="GET /tests/token (K6_TEST_TOKEN_AUTH)"
+  if [[ -n "${K6_FIREBASE_TOKEN:-}" ]]; then
+    echo "NOTE: K6_FIREBASE_TOKEN is set in this shell but will be ignored; /tests/token wins." >&2
+  fi
+elif [[ -n "${K6_FIREBASE_TOKEN:-}" ]]; then
+  AUTH_MODE="direct K6_FIREBASE_TOKEN"
+fi
+
+# Round-robin venue split (same as src/data.js venueForVu).
+VENUE_COUNT=0
+VENUE_SPLIT_MSG="(no K6_VENUE_IDS configured — setup will discover)"
+if [[ -n "${K6_VENUE_IDS:-}" ]]; then
+  IFS=',' read -r -a _VENUES <<< "${K6_VENUE_IDS}"
+  VENUE_COUNT=${#_VENUES[@]}
+  if (( VENUE_COUNT > 0 )); then
+    _per=$(( VUS / VENUE_COUNT ))
+    _rem=$(( VUS % VENUE_COUNT ))
+    VENUE_SPLIT_MSG="~${_per}/venue across ${VENUE_COUNT} venues (+${_rem} remainder via round-robin)"
+  fi
 fi
 
 mkdir -p reports
@@ -53,7 +80,9 @@ fi
 echo "================================================================================"
 echo "NiteOut final journey | run=${RUN_ID} | profile=${PROFILE} | VUS=${VUS}"
 echo "duration=${TEST_DURATION} | session=${SESSION_SECONDS}s | heartbeat=${HEARTBEAT_SECONDS}s"
+echo "Auth: ${AUTH_MODE}"
 echo "Venues: ${K6_VENUE_IDS}"
+echo "Venue split: ${VENUE_SPLIT_MSG}"
 echo "Detailed JSON: ${K6_DETAILED_JSON}"
 echo "Native k6 JSON: ${NATIVE_JSON}"
 echo "Client HTML report: ${CLIENT_REPORT}"

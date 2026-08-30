@@ -36,6 +36,8 @@ const LOAD_THRESHOLDS = {
 
 export const ENV = {
   baseUrl: (__ENV.K6_BASE_URL || 'https://us-central1-niteout-c7d45.cloudfunctions.net/dev_api').replace(/\/$/, ''),
+  // Static bearer for GET /tests/token (test-utility auth). Prefer this over hand-exporting JWTs.
+  testTokenAuth: __ENV.K6_TEST_TOKEN_AUTH || '',
   firebaseToken: __ENV.K6_FIREBASE_TOKEN || '',
   venueIds: (__ENV.K6_VENUE_IDS || '').split(',').map(v=>v.trim()).filter(Boolean),
   queueVenueIds: (__ENV.K6_QUEUE_VENUE_IDS || '').split(',').map(v=>v.trim()).filter(Boolean),

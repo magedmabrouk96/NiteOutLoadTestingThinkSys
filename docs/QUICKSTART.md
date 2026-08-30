@@ -1,15 +1,29 @@
-# Quick start — direct Firebase token mode
+# Quick start — auto token via GET /tests/token
+
+`.env` already contains `K6_TEST_TOKEN_AUTH`. When you run any script, k6 `setup()` calls `GET /tests/token` once, then every VU reuses that Firebase JWT.
 
 ```bash
-export K6_BASE_URL="https://us-central1-niteout-c7d45.cloudfunctions.net/dev_api"
-export K6_FIREBASE_TOKEN="<fresh Firebase ID token>"
-unset K6_TEST_TOKEN_AUTH
+# Optional overrides only:
+# export K6_FIREBASE_TOKEN="<fresh Firebase ID token>"
+# export K6_TOKEN_FILE=./tokens.txt
 ```
 
 Validate the core environment:
 
 ```bash
 k6 run scripts/preflight.js
+```
+
+Run the final 50-VU local profile:
+
+```bash
+./scripts/run-final.sh local
+```
+
+Open the latest client report:
+
+```bash
+open "$(ls -t reports/final-local-*-client-report.html | head -1)"
 ```
 
 Run all safe documented GET operations that have resolvable IDs:
