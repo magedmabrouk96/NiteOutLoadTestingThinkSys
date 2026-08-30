@@ -1,5 +1,3 @@
-> **FINAL v9.3** — reporting-stable build with coverage-safe thresholds and clean capability probes.
-
 # NiteOut k6 Final User-Journey Framework v8
 
 This is the consolidated requirement-ready NiteOut performance framework.
