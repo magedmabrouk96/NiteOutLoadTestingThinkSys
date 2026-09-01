@@ -1,20 +1,326 @@
 {
-  "annotations":{"list":[]},
-  "editable":true,
-  "graphTooltip":1,
-  "panels":[
-    {"type":"timeseries","title":"Virtual Users","gridPos":{"h":8,"w":12,"x":0,"y":0},"targets":[{"expr":"k6_vus","legendFormat":"VUs"}]},
-    {"type":"timeseries","title":"HTTP Requests / sec","gridPos":{"h":8,"w":12,"x":12,"y":0},"targets":[{"expr":"rate(k6_http_reqs_total[1m])","legendFormat":"RPS"}]},
-    {"type":"timeseries","title":"HTTP Failure Rate","gridPos":{"h":8,"w":12,"x":0,"y":8},"targets":[{"expr":"k6_http_req_failed_rate","legendFormat":"failed"}]},
-    {"type":"timeseries","title":"HTTP Duration p95 / p99","gridPos":{"h":8,"w":12,"x":12,"y":8},"targets":[{"expr":"k6_http_req_duration_p95","legendFormat":"p95"},{"expr":"k6_http_req_duration_p99","legendFormat":"p99"}]},
-    {"type":"timeseries","title":"Journey Success","gridPos":{"h":8,"w":12,"x":0,"y":16},"targets":[{"expr":"k6_journey_success_rate","legendFormat":"journey success"}]},
-    {"type":"timeseries","title":"Heartbeat Success","gridPos":{"h":8,"w":12,"x":12,"y":16},"targets":[{"expr":"k6_heartbeat_success_rate","legendFormat":"heartbeat success"}]}
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "text",
+      "title": "How to read this dashboard",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "mode": "markdown",
+        "content": "## NiteOut load test — live view\n\n**While a test runs**, watch these signals:\n\n| Signal | Good | Investigate |\n|---|---|---|\n| **Error rate** | stays **below 1%** | climbing or spiking |\n| **Latency p95** | mostly **under 1.5s** (reads) | sustained above 2–3s |\n| **Journey / Heartbeat** | near **100%** | dropping during steady load |\n| **VUs** | ramps to target (50 / 600…) | flat at 0 = test not running |\n\n**Client sign-off** uses the HTML report (`*-client-report.html`), not this dashboard. This is for engineers watching the run in real time."
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Active users (VUs)",
+      "description": "Concurrent virtual sessions. Should ramp up to your target (e.g. 50 or 600).",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 4 },
+      "id": 2,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "k6_vus", "refId": "A", "legendFormat": "VUs" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Requests / second",
+      "description": "Total API throughput from all virtual users.",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 4 },
+      "id": 3,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "sum(rate(k6_http_reqs_total[1m]))", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "HTTP error rate",
+      "description": "Share of requests that failed. Target: below 1%.",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 4 },
+      "id": 4,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "k6_http_req_failed_rate", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.005 },
+              { "color": "red", "value": 0.01 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Overall latency (p95)",
+      "description": "95th percentile response time across all API calls.",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 4 },
+      "id": 5,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "k6_http_req_duration_p95", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1500 },
+              { "color": "red", "value": 3000 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Users ramping up",
+      "description": "Virtual users over time. You should see a step-up to your target, then a plateau.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 6,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "k6_vus", "refId": "A", "legendFormat": "Active VUs" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20, "spanNulls": false }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "API traffic (requests / sec)",
+      "description": "How hard the backend is being hit.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 7,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "sum(rate(k6_http_reqs_total[1m]))", "refId": "A", "legendFormat": "Total RPS" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Errors — HTTP vs app vs network",
+      "description": "HTTP failed = any bad response. Application = API returned error. Transport = timeout / network.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "id": 8,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "k6_http_req_failed_rate", "refId": "A", "legendFormat": "HTTP failed" },
+        { "expr": "k6_application_error_rate", "refId": "B", "legendFormat": "Application errors" },
+        { "expr": "k6_transport_error_rate", "refId": "C", "legendFormat": "Transport / timeout" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 0.05,
+          "custom": { "drawStyle": "line", "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0.01 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Session health — journey & heartbeat",
+      "description": "End-to-end user session success vs in-venue polling success. Both should stay near 100%.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "id": 9,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "k6_journey_success_rate", "refId": "A", "legendFormat": "Full journey OK" },
+        { "expr": "k6_heartbeat_success_rate", "refId": "B", "legendFormat": "Heartbeat polls OK" },
+        { "expr": "k6_checks_rate", "refId": "C", "legendFormat": "Assertions OK" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0.9,
+          "max": 1,
+          "custom": { "drawStyle": "line", "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.98 },
+              { "color": "green", "value": 0.99 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min"] }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency by area — p95 (ms)",
+      "description": "Venue / music / events = hot path (target p95 under 1.5s). Social = browse (under 2s). Chat = writes (under 3.5s).",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 25 },
+      "id": 10,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "k6_http_req_duration_p95{api_group=\"venue\"}", "refId": "A", "legendFormat": "Venue" },
+        { "expr": "k6_http_req_duration_p95{api_group=\"music\"}", "refId": "B", "legendFormat": "Music / heartbeat" },
+        { "expr": "k6_http_req_duration_p95{api_group=\"events\"}", "refId": "C", "legendFormat": "Events" },
+        { "expr": "k6_http_req_duration_p95{api_group=\"social\"}", "refId": "D", "legendFormat": "Social" },
+        { "expr": "k6_http_req_duration_p95{api_group=\"chat\"}", "refId": "E", "legendFormat": "Chat writes" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1500 },
+              { "color": "red", "value": 3000 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Chat writes" },
+            "properties": [
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 3500 }, { "color": "red", "value": 5000 }] } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Overall latency — p95 & p99 (ms)",
+      "description": "Tail latency across all calls. Spikes here mean something got slow even if averages look fine.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 34 },
+      "id": 11,
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "k6_http_req_duration_p95", "refId": "A", "legendFormat": "p95" },
+        { "expr": "k6_http_req_duration_p99", "refId": "B", "legendFormat": "p99" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "drawStyle": "line", "lineWidth": 2 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1500 },
+              { "color": "red", "value": 3000 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
+    }
   ],
-  "schemaVersion":39,
-  "tags":["niteout","k6","performance"],
-  "templating":{"list":[]},
-  "time":{"from":"now-30m","to":"now"},
-  "title":"NiteOut k6 Overview",
-  "uid":"niteout-k6-overview",
-  "version":1
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["niteout", "k6", "performance"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "label": "Prometheus",
+        "hide": 0
+      }
+    ]
+  },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "NiteOut k6 — Live Load Test",
+  "uid": "niteout-k6-overview",
+  "version": 2,
+  "description": "Live engineering view while a NiteOut k6 run is in progress. Use the HTML client report for formal pass/fail."
 }

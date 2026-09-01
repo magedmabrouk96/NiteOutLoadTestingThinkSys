@@ -88,8 +88,22 @@ observability/grafana/dashboards/niteout-k6-overview.json
 ```
 
 4. When asked for a datasource, pick the stack’s **Prometheus** / `grafanacloud-…-prom` datasource
-5. Import → open **NiteOut k6 Overview**
+5. Import → open **NiteOut k6 — Live Load Test**
 6. Set time range to **Last 15 minutes** (or Last 30 minutes)
+
+**How to read it (top → bottom):**
+
+| Section | What it tells you |
+|---|---|
+| Intro panel | Good vs bad at a glance |
+| 4 stat tiles | Active VUs · RPS · Error % · p95 (color-coded) |
+| Ramp & traffic | Users climbing + load on API |
+| Errors & session health | Failures vs journey/heartbeat success |
+| Latency by area | Venue / music / events / social / chat (matches HTML report) |
+| Overall p95/p99 | Tail latency spikes |
+
+**Good while watching:** errors **&lt; 1%**, journey/heartbeat **~100%**, read p95 mostly **&lt; 1.5s**.  
+Formal pass/fail is still the **HTML client report**, not Grafana.
 
 ---
 
