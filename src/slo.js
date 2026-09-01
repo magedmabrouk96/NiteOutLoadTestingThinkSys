@@ -47,6 +47,7 @@ export const API_GROUP_TIER = {
 export const ENDPOINT_TIER = {
   get_bars: 'interactive',
   get_bar: 'interactive',
+  get_playing_songs: 'interactive',
   get_queue: 'interactive',
   get_music: 'interactive',
   get_announcement: 'interactive',
@@ -124,5 +125,13 @@ export function sloForEndpoint(endpointId, profile) {
   };
 }
 
-/** WARN when at or above this fraction of the SLO (budget burn). */
+/** WARN when at or above this fraction of the latency SLO (budget burn). */
 export const SLO_WARN_RATIO = 0.85;
+
+/**
+ * Per-endpoint request failure budget for client-report grading.
+ * Matches overall application_error_rate (<1%). A handful of failures across
+ * tens of thousands of calls must not paint the whole endpoint FAIL.
+ */
+export const ENDPOINT_FAIL_RATE_FAIL = 0.01;   // ≥1% → FAIL
+export const ENDPOINT_FAIL_RATE_WARN = 0.005;  // ≥0.5% → WARN

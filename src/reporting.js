@@ -1,5 +1,10 @@
 import { ENDPOINT_DEFINITIONS } from './endpoint-metrics.js';
-import { sloForEndpoint, SLO_WARN_RATIO } from './slo.js';
+import {
+  sloForEndpoint,
+  SLO_WARN_RATIO,
+  ENDPOINT_FAIL_RATE_FAIL,
+  ENDPOINT_FAIL_RATE_WARN,
+} from './slo.js';
 
 function n(v, fallback=0) { return Number.isFinite(Number(v)) ? Number(v) : fallback; }
 function metric(data,name){ return data?.metrics?.[name]?.values || {}; }
@@ -42,17 +47,49 @@ function section(title){ return `\n${'='.repeat(118)}\n${title}\n${'='.repeat(11
 
 function endpointAssessment(e, profile){
   const sla=sloForEndpoint(e.id, profile);
-  if(e.fail>0) return {status:'FAIL',severity:'HIGH',reason:`${e.fail} request${e.fail===1?'':'s'} failed`,sla};
-  if(sla && (e.p95>sla.p95 || e.p99>sla.p99)) {
-    const reasons=[];
-    if(e.p95>sla.p95) reasons.push(`p95 ${fmtMs(e.p95)} > ${fmtMs(sla.p95)}`);
-    if(e.p99>sla.p99) reasons.push(`p99 ${fmtMs(e.p99)} > ${fmtMs(sla.p99)}`);
-    return {status:'FAIL',severity:'HIGH',reason:reasons.join('; '),sla};
+  const failRate = e.calls > 0 ? e.fail / e.calls : 0;
+
+  // Reliability: grade by error *rate*, not absolute fail count.
+  // 10 failures in 43k calls (~0.02%) is noise, not an endpoint outage.
+  if (failRate >= ENDPOINT_FAIL_RATE_FAIL) {
+    return {
+      status: 'FAIL',
+      severity: 'HIGH',
+      reason: `${e.fail}/${e.calls} failed (${fmtPct(failRate)} ≥ ${fmtPct(ENDPOINT_FAIL_RATE_FAIL)} budget)`,
+      sla,
+    };
   }
-  if(sla && (e.p95>=sla.p95*SLO_WARN_RATIO || e.p99>=sla.p99*SLO_WARN_RATIO)) {
-    return {status:'WARN',severity:'WATCH',reason:`Approaching provisional SLO (${fmtMs(e.p95)} p95 / ${fmtMs(e.p99)} p99 · tier ${sla.tier})`,sla};
+  if (failRate >= ENDPOINT_FAIL_RATE_WARN) {
+    return {
+      status: 'WARN',
+      severity: 'WATCH',
+      reason: `${e.fail}/${e.calls} failed (${fmtPct(failRate)} approaching ${fmtPct(ENDPOINT_FAIL_RATE_FAIL)} budget)`,
+      sla,
+    };
   }
-  return {status:'PASS',severity:'OK',reason:sla ? `Within provisional SLO (${sla.label})` : 'No request failures',sla};
+
+  if (sla && (e.p95 > sla.p95 || e.p99 > sla.p99)) {
+    const reasons = [];
+    if (e.p95 > sla.p95) reasons.push(`p95 ${fmtMs(e.p95)} > ${fmtMs(sla.p95)}`);
+    if (e.p99 > sla.p99) reasons.push(`p99 ${fmtMs(e.p99)} > ${fmtMs(sla.p99)}`);
+    return { status: 'FAIL', severity: 'HIGH', reason: reasons.join('; '), sla };
+  }
+  if (sla && (e.p95 >= sla.p95 * SLO_WARN_RATIO || e.p99 >= sla.p99 * SLO_WARN_RATIO)) {
+    return {
+      status: 'WARN',
+      severity: 'WATCH',
+      reason: `Approaching provisional SLO (${fmtMs(e.p95)} p95 / ${fmtMs(e.p99)} p99 · tier ${sla.tier})`,
+      sla,
+    };
+  }
+
+  const note =
+    e.fail > 0
+      ? `Within budget (${e.fail}/${e.calls} failed, ${fmtPct(failRate)})`
+      : sla
+        ? `Within provisional SLO (${sla.label})`
+        : 'No request failures';
+  return { status: 'PASS', severity: 'OK', reason: note, sla };
 }
 function deriveIssues(result){
   const issues=[];

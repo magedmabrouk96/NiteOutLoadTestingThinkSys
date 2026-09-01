@@ -36,7 +36,15 @@ Single source of truth: [`src/slo.js`](../src/slo.js).
 | **Write** | 3.5s | 5s | chat / runtime mutations |
 | **Heavy** | 5s | 8s | profile / media / onboarding |
 
-WARN in reports when an endpoint reaches **85%** of its SLO (budget burn).
+WARN in reports when an endpoint reaches **85%** of its latency SLO (budget burn).
+
+Per-endpoint request failures are graded by **rate**, not absolute count:
+
+| Fail rate | Report |
+|---|---|
+| `< 0.5%` | PASS (noise OK — e.g. 10 / 43k) |
+| `≥ 0.5%` | WARN |
+| `≥ 1%` | FAIL (matches overall `application_error_rate`) |
 
 ## Changing SLOs
 
