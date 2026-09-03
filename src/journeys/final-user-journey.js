@@ -10,8 +10,6 @@ import { venueForVu, pickQuery } from '../data.js';
 import { activeHeartbeatSession } from './heartbeat.js';
 import { journeyDuration, journeySuccess, skippedOperations, activeSessionDuration } from '../metrics.js';
 
-function chance(p){ return p >= 1 || (p > 0 && Math.random() < p); }
-
 export function finalUserJourney(token, shared){
   const started = Date.now();
   let passed = true;
@@ -34,13 +32,13 @@ export function finalUserJourney(token, shared){
   if(ENV.enableQueue && queueSupported) passed = ok(getBarQueue(token,venueId),'GET /bars/{barId}/queue') && passed;
   else skippedOperations.add(1,{operation:ENV.enableQueue?'queue_unsupported_for_venue':'queue_disabled'});
 
-  // 2) Event state and RSVP state.
+  // 2) Event state and RSVP
   passed = ok(getCurrentEvents(token),'GET /events/current') && passed;
   if(eventId){
     passed = ok(getEventRsvps(token,eventId),'GET /events/{eventId}/rsvp') && passed;
-    if(ENV.enableRuntimeWrites && chance(ENV.rsvpWriteProbability)){
+    if(ENV.enableRuntimeWrites){
       passed = ok(rsvpEvent(token,eventId,ENV.testRsvpStatus),'POST /events/{eventId}/rsvp') && passed;
-    } else skippedOperations.add(1,{operation:'runtime_rsvp_not_selected'});
+    } else skippedOperations.add(1,{operation:'runtime_writes_disabled'});
   } else skippedOperations.add(1,{operation:'event_id_unavailable'});
 
   // 3) Social/discovery actions performed during a normal session.
@@ -57,8 +55,8 @@ export function finalUserJourney(token, shared){
   passed = activeHeartbeatSession(token,venueId,eventId,ENV.sessionSeconds) && passed;
   activeSessionDuration.add(Date.now()-activeStart,{journey:'final_user_journey'});
 
-  // 5) Runtime chat action. Controlled by probability to avoid every user messaging every iteration.
-  if(ENV.enableRuntimeWrites && ENV.chatUserUuid && chance(ENV.chatWriteProbability)){
+  // 5) Venue chat
+  if(ENV.enableRuntimeWrites && ENV.chatUserUuid){
     const payload = {
       barid: venueId,
       environment: ENV.environment,
@@ -70,7 +68,7 @@ export function finalUserJourney(token, shared){
       userRole: ENV.chatUserRole,
     };
     passed = ok(postVenueChat(token,payload),'POST /chat/messages') && passed;
-  } else skippedOperations.add(1,{operation:'runtime_chat_not_selected'});
+  } else skippedOperations.add(1,{operation: ENV.enableRuntimeWrites ? 'runtime_chat_missing_user_uuid' : 'runtime_writes_disabled'});
 
   sleep(1 + Math.random()*2);
   journeyDuration.add(Date.now()-started,{journey:'final_user_journey'});
