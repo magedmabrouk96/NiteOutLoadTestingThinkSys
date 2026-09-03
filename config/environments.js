@@ -2,7 +2,6 @@ import { thresholdsForProfile } from '../src/slo.js';
 
 function bool(name, fallback='false') { return (__ENV[name] || fallback).toLowerCase() === 'true'; }
 function num(name, fallback) { const n=Number(__ENV[name]); return Number.isFinite(n) && n>0 ? n : fallback; }
-function ratio(name, fallback) { const n=Number(__ENV[name]); return Number.isFinite(n) && n>=0 && n<=1 ? n : fallback; }
 
 const TEST_PROFILE = (__ENV.TEST_PROFILE || 'load').toLowerCase();
 
@@ -69,11 +68,10 @@ export const ENV = {
   mobileIncludeReads: bool('MOBILE_INCLUDE_READS','true'),
 
   // Final concatenated journey controls.
+  // Chat + RSVP run every session lap when enableRuntimeWrites is true (no sampling).
   enableRuntimeWrites: bool('ENABLE_RUNTIME_WRITES','true'),
   runRareMobileWritesOnce: bool('RUN_RARE_MOBILE_WRITES_ONCE'),
   excludeEmailSubscribe: bool('EXCLUDE_EMAIL_SUBSCRIBE','true'),
-  chatWriteProbability: ratio('CHAT_WRITE_PROBABILITY', 0.20),
-  rsvpWriteProbability: ratio('RSVP_WRITE_PROBABILITY', 0.10),
 
   // Provisional SLOs — single source of truth in src/slo.js
   thresholds: thresholdsForProfile(TEST_PROFILE),

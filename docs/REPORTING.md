@@ -2,7 +2,7 @@
 
 Each run produces four outputs:
 
-1. **Client HTML report** (`*-client-report.html`) — primary shareable result. It includes an executive PASS/FAIL banner, highlighted issues, endpoint-level status, provisional threshold vs actual p95/p99, slowest endpoints, quality gates, load configuration, venue scope, and test assumptions.
+1. **Client HTML report** (`*-client-report.html`) — primary shareable result. It includes an executive PASS/FAIL banner, highlighted issues, **three scope tables** (concurrent load · one-time coverage writes · optional/excluded), endpoint-level status, provisional threshold vs actual p95/p99, slowest endpoints, quality gates, load configuration, venue scope, and test assumptions.
 2. **Engineering k6 dashboard** (`*-dashboard.html`) — time-series charts from the built-in k6 web dashboard.
 3. **Detailed JSON** (`*-detailed.json`) — NiteOut-specific machine-readable endpoint results.
 4. **Native k6 JSON** (`*-k6-summary.json`) — raw k6 end-of-test summary.

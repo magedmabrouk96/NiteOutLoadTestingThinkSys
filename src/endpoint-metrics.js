@@ -36,15 +36,36 @@ export const ENDPOINT_DEFINITIONS = [
   { id:'post_chat', phase:'Runtime Write', method:'POST', endpoint:'/chat/messages', metricKey:'POST /chat/messages' },
 ];
 
+/** Status buckets for the HTML non-200 table. Separate Counter names (not tags) so
+ *  k6's end-of-test summary keeps them — tagged custom counters collapse to one untagged total. */
+export const NON200_STATUS_BUCKETS = [
+  '0', '400', '401', '403', '404', '409', '422', '429',
+  '500', '502', '503', '504', 'other_2xx', 'other',
+];
+
+export function statusBucket(status) {
+  const s = Number(status);
+  if (!Number.isFinite(s) || s === 0) return '0';
+  if (s === 200) return null;
+  if (s >= 200 && s < 300) return 'other_2xx';
+  const key = String(s);
+  return NON200_STATUS_BUCKETS.includes(key) ? key : 'other';
+}
+
 const byKey = {};
 export const endpointMetrics = {};
 for (const def of ENDPOINT_DEFINITIONS) {
   byKey[def.metricKey] = def;
+  const non200 = {};
+  for (const bucket of NON200_STATUS_BUCKETS) {
+    non200[bucket] = new Counter(`endpoint_${def.id}_non200_${bucket}`);
+  }
   endpointMetrics[def.id] = {
     calls: new Counter(`endpoint_${def.id}_calls`),
     passes: new Counter(`endpoint_${def.id}_passes`),
     failures: new Counter(`endpoint_${def.id}_failures`),
     duration: new Trend(`endpoint_${def.id}_duration`, true),
+    non200,
   };
 }
 
@@ -57,4 +78,7 @@ export function recordEndpointResult(metricKey, response, passed, transportFailu
   if (!transportFailure && response?.timings && Number.isFinite(response.timings.duration)) {
     m.duration.add(response.timings.duration);
   }
+  const status = transportFailure || !response ? 0 : Number(response.status);
+  const bucket = statusBucket(status);
+  if (bucket) m.non200[bucket].add(1);
 }
