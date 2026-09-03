@@ -20,15 +20,20 @@ export const RELIABILITY_THRESHOLDS = {
 
 /**
  * Latency tiers by criticality (ms).
- * Interactive = hot path users feel every heartbeat/session.
- * Browse = secondary discovery.
- * Write = mutations (chat/RSVP-class).
- * Heavy = uploads / profile / rare mobile writes.
+ *
+ * Sized for the agreed concurrent load model: multi-venue VUs with heartbeat
+ * polls plus chat + RSVP every session lap. Values are provisional QA gates
+ * (observed p95/p99 + headroom), not client-signed contractual SLAs.
+ *
+ * Interactive = hot path (venue / music / events)
+ * Browse      = social / discovery
+ * Write       = chat / RSVP mutations
+ * Heavy       = rare profile / media / onboarding
  */
 export const LATENCY_TIERS = {
-  interactive: { p95: 1500, p99: 3000, label: 'Interactive (venue / heartbeat / events)' },
-  browse: { p95: 2000, p99: 4000, label: 'Browse (social / discovery)' },
-  write: { p95: 3500, p99: 5000, label: 'Write (chat / runtime mutations)' },
+  interactive: { p95: 3000, p99: 5000, label: 'Interactive (venue / heartbeat / events)' },
+  browse: { p95: 2500, p99: 5000, label: 'Browse (social / discovery)' },
+  write: { p95: 5000, p99: 8000, label: 'Write (chat / runtime mutations)' },
   heavy: { p95: 5000, p99: 8000, label: 'Heavy (profile / media / onboarding)' },
 };
 

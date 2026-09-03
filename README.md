@@ -152,4 +152,4 @@ Setup details: [docs/PUBLISHING.md](docs/PUBLISHING.md)
 ## Notes
 
 - One shared Firebase test identity is enough for API load; multi-token `K6_TOKEN_FILE` only if you need identity-realistic writes.
-- Latency gates are **provisional QA SLOs**, not client-signed contractual SLAs, until agreed.
+- Latency gates are **provisional QA SLOs** (interactive 3s/5s p95/p99, browse 2.5s/5s, writes 5s/8s), sized for concurrent multi-venue load with chat/RSVP every lap — not client-signed contractual SLAs until agreed. See [docs/THRESHOLDS.md](docs/THRESHOLDS.md).

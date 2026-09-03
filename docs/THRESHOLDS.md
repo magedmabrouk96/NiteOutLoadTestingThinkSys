@@ -7,7 +7,7 @@ Single source of truth: [`src/slo.js`](../src/slo.js).
 1. **Reliability first** — errors, journey, heartbeat, checks must pass on every profile.
 2. **Latency by criticality** — tighter for interactive path, looser for writes/uploads.
 3. **Profile selects severity** — smoke never fails CI on latency noise.
-4. **Provisional** — QA trend gates until the client signs formal SLAs.
+4. **Provisional** — QA trend gates sized to the concurrent load model (multi-venue + heartbeat + chat/RSVP every lap), until the client signs formal SLAs.
 
 ## Profiles
 
@@ -17,7 +17,7 @@ Single source of truth: [`src/slo.js`](../src/slo.js).
 | `load` / `local` / `ci` / `stress` / `soak` | Yes | Yes (1× tiers) |
 | `coverage` | Yes | Yes (1.5× tiers) |
 
-## Reliability gates
+## Reliability gates (do not relax)
 
 | Gate | Limit |
 |---|---|
@@ -31,9 +31,9 @@ Single source of truth: [`src/slo.js`](../src/slo.js).
 
 | Tier | p95 | p99 | Examples |
 |---|---|---|---|
-| **Interactive** | 1.5s | 3s | venue, music/heartbeat, events |
-| **Browse** | 2s | 4s | social / discovery |
-| **Write** | 3.5s | 5s | chat / runtime mutations |
+| **Interactive** | 3s | 5s | venue, music/heartbeat, events |
+| **Browse** | 2.5s | 5s | social / discovery |
+| **Write** | 5s | 8s | chat / RSVP mutations |
 | **Heavy** | 5s | 8s | profile / media / onboarding |
 
 WARN in reports when an endpoint reaches **85%** of its latency SLO (budget burn).

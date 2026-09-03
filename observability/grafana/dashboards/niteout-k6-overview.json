@@ -8,34 +8,41 @@
   "panels": [
     {
       "type": "text",
-      "title": "How to use this dashboard",
-      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+      "title": "How to read this dashboard",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
       "id": 1,
       "options": {
         "mode": "markdown",
-        "content": "### While the test is running\nWatch the **big numbers** and the **lines**. Green = healthy. Red error-rate = above 1%.\n\n### After the test is over\n1. Set the time picker (top right) to **cover the whole run** (e.g. Last 1 hour, or a custom range).\n2. Read the **yellow “This run (selected window)”** row — Peak users, peak RPS, typical error %, slowest p95.\n3. For the **client / sign-off summary** (every endpoint, PASS/FAIL), use the **HTML report** from GitHub Actions artifacts — Grafana is the live/engineering view, not the signed client report.\n\n**Why you used to see 40× “HTTP failed”:** k6 tags every URL separately. Those 100% lines were *one URL’s failed series*, not the whole test. Queries below are **aggregated to one number / one line**."
+        "content": "**Green = healthy · Yellow = watch · Red = above 1% failed requests.**\n\n| What you see | Meaning |\n|---|---|\n| **Failed requests %** | Share of API calls that failed (timeout / network / non-2xx). Target: under **1%**. |\n| **Users** | Concurrent virtual users. After the test ends this drops to 0 — use **Peak users** for the 50 / 600 figure. |\n| **Requests / sec** | How hard the API is being hit. |\n| **p95 latency** | 95% of requests were faster than this. Provisional interactive gate ≈ **3s**. |\n\nSet the time picker (top-right) to cover the full run. **Client PASS/FAIL** is still the HTML report from GitHub Actions — this board is the live engineering view."
       }
     },
     {
       "type": "row",
       "title": "This run (selected time window) — set the clock to the full test first",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
       "id": 20,
       "collapsed": false
     },
     {
       "type": "stat",
-      "title": "Peak concurrent users",
-      "description": "Highest VU count in the selected time range. For a 600-user test this should be ~600 (not the last value after ramp-down).",
-      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 6 },
+      "title": "Peak users",
+      "description": "Highest concurrent VUs in the selected window (the number you configured, e.g. 50 or 600).",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 5 },
       "id": 21,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max_over_time(max(k6_vus)[$__range:])", "refId": "A", "legendFormat": "Peak VUs" }],
+      "targets": [
+        {
+          "expr": "max_over_time(max(k6_vus)[$__range:])",
+          "refId": "A",
+          "legendFormat": "Peak VUs"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "none",
           "decimals": 0,
-          "color": { "mode": "fixed", "fixedColor": "blue" }
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "noValue": "—"
         }
       },
       "options": {
@@ -48,16 +55,23 @@
     {
       "type": "stat",
       "title": "Peak requests / sec",
-      "description": "Busiest minute in the selected window.",
-      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 6 },
+      "description": "Busiest 1-minute request rate in the selected window.",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 5 },
       "id": 22,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max_over_time(sum(rate(k6_http_reqs_total[1m]))[$__range:])", "refId": "A", "legendFormat": "Peak RPS" }],
+      "targets": [
+        {
+          "expr": "max_over_time(sum(rate(k6_http_reqs_total[1m]))[$__range:])",
+          "refId": "A",
+          "legendFormat": "Peak RPS"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
           "decimals": 1,
-          "color": { "mode": "fixed", "fixedColor": "purple" }
+          "color": { "mode": "fixed", "fixedColor": "purple" },
+          "noValue": "—"
         }
       },
       "options": {
@@ -69,18 +83,25 @@
     },
     {
       "type": "stat",
-      "title": "Error rate (window avg)",
-      "description": "Average overall HTTP fail rate in the window. Target: below 1%.",
-      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 6 },
+      "title": "Failed requests % (window)",
+      "description": "Average share of failed API calls in the window. Uses k6 http_req_failed (0–100%). Target under 1%. Shows 0% when healthy — not “No data”.",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 5 },
       "id": 23,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "avg_over_time((sum(rate(k6_http_req_failed_count[1m])) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 0.001))[$__range:])", "refId": "A", "legendFormat": "Avg fail %" }],
+      "targets": [
+        {
+          "expr": "avg_over_time((avg(k6_http_req_failed_rate))[$__range:])",
+          "refId": "A",
+          "legendFormat": "Failed %"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
           "decimals": 2,
           "min": 0,
           "max": 1,
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -100,22 +121,29 @@
     },
     {
       "type": "stat",
-      "title": "Slowest overall p95 (window)",
-      "description": "Highest overall p95 latency seen in the window (milliseconds).",
-      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 6 },
+      "title": "Slowest p95 (window)",
+      "description": "Highest p95 latency seen across endpoints in the window (milliseconds).",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 5 },
       "id": 24,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max_over_time(max(k6_http_req_duration_p95)[$__range:])", "refId": "A", "legendFormat": "Max p95" }],
+      "targets": [
+        {
+          "expr": "max_over_time(max(k6_http_req_duration_p95)[$__range:])",
+          "refId": "A",
+          "legendFormat": "Max p95"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
           "decimals": 0,
+          "noValue": "—",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 1500 },
-              { "color": "red", "value": 3000 }
+              { "color": "yellow", "value": 3000 },
+              { "color": "red", "value": 5000 }
             ]
           }
         }
@@ -129,23 +157,30 @@
     },
     {
       "type": "row",
-      "title": "Live now (or last sample in the window)",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "title": "Live now (last sample in the window)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
       "id": 25,
       "collapsed": false
     },
     {
       "type": "stat",
-      "title": "Users right now",
-      "description": "After ramp-down this goes to 0. Use Peak concurrent users above for the 50/600 number.",
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 12 },
+      "title": "Users now",
+      "description": "Goes to 0 after ramp-down. Use Peak users above for the configured VU count.",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 11 },
       "id": 2,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max(k6_vus)", "refId": "A", "legendFormat": "VUs now" }],
+      "targets": [
+        {
+          "expr": "max(k6_vus)",
+          "refId": "A",
+          "legendFormat": "VUs"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "decimals": 0
+          "decimals": 0,
+          "noValue": "0"
         }
       },
       "options": {
@@ -158,12 +193,22 @@
     {
       "type": "stat",
       "title": "Requests / sec now",
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 12 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 11 },
       "id": 3,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(k6_http_reqs_total[1m]))", "refId": "A", "legendFormat": "RPS" }],
+      "targets": [
+        {
+          "expr": "sum(rate(k6_http_reqs_total[1m]))",
+          "refId": "A",
+          "legendFormat": "RPS"
+        }
+      ],
       "fieldConfig": {
-        "defaults": { "unit": "reqps", "decimals": 1 }
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 1,
+          "noValue": "0"
+        }
       },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
@@ -174,18 +219,25 @@
     },
     {
       "type": "stat",
-      "title": "HTTP error rate now",
-      "description": "One overall number (all URLs combined). Target below 1%.",
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 12 },
+      "title": "Failed requests % now",
+      "description": "Overall fail rate right now (all APIs combined). Green under 0.5%, yellow to 1%, red above 1%.",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 11 },
       "id": 4,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(k6_http_req_failed_count[1m])) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 0.001)", "refId": "A", "legendFormat": "Fail %" }],
+      "targets": [
+        {
+          "expr": "avg(k6_http_req_failed_rate)",
+          "refId": "A",
+          "legendFormat": "Failed %"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
           "decimals": 2,
           "min": 0,
           "max": 1,
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -206,20 +258,28 @@
     {
       "type": "stat",
       "title": "Latency p95 now",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 12 },
+      "description": "Current overall p95 (slowest series). Provisional interactive gate ≈ 3s.",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 11 },
       "id": 5,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max(k6_http_req_duration_p95)", "refId": "A", "legendFormat": "p95" }],
+      "targets": [
+        {
+          "expr": "max(k6_http_req_duration_p95)",
+          "refId": "A",
+          "legendFormat": "p95"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
           "decimals": 0,
+          "noValue": "—",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 1500 },
-              { "color": "red", "value": 3000 }
+              { "color": "yellow", "value": 3000 },
+              { "color": "red", "value": 5000 }
             ]
           }
         }
@@ -233,52 +293,81 @@
     },
     {
       "type": "timeseries",
-      "title": "Users over time (one line)",
+      "title": "Users over time",
       "description": "Ramp up → hold at target → ramp down to 0.",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
       "id": 6,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "max(k6_vus)", "refId": "A", "legendFormat": "Concurrent users" }],
+      "targets": [
+        {
+          "expr": "max(k6_vus)",
+          "refId": "A",
+          "legendFormat": "Concurrent users"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "none",
           "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20 }
         }
       },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } }
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      }
     },
     {
       "type": "timeseries",
-      "title": "API traffic (one line)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "title": "API traffic",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
       "id": 7,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "targets": [{ "expr": "sum(rate(k6_http_reqs_total[1m]))", "refId": "A", "legendFormat": "Requests / sec" }],
+      "targets": [
+        {
+          "expr": "sum(rate(k6_http_reqs_total[1m]))",
+          "refId": "A",
+          "legendFormat": "Requests / sec"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
           "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 }
         }
       },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } }
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      }
     },
     {
       "type": "timeseries",
-      "title": "Overall error rate (one line — all APIs together)",
-      "description": "This is the number that matters. Individual URLs are not listed.",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "title": "Failed requests % (all APIs together)",
+      "description": "One overall line for k6 HTTP failures, plus app vs timeout/network. Target under 1%.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
       "id": 8,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
-        { "expr": "sum(rate(k6_http_req_failed_count[1m])) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 0.001)", "refId": "A", "legendFormat": "HTTP failed (all APIs)" },
-        { "expr": "avg(k6_application_error_rate)", "refId": "B", "legendFormat": "Application errors" },
-        { "expr": "avg(k6_transport_error_rate)", "refId": "C", "legendFormat": "Timeouts / network" }
+        {
+          "expr": "avg(k6_http_req_failed_rate)",
+          "refId": "A",
+          "legendFormat": "HTTP failed %"
+        },
+        {
+          "expr": "(sum(rate(k6_application_errors_total[1m])) or on() vector(0)) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 1e-9)",
+          "refId": "B",
+          "legendFormat": "App errors (non-2xx)"
+        },
+        {
+          "expr": "(sum(rate(k6_transport_errors_total[1m])) or on() vector(0)) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 1e-9)",
+          "refId": "C",
+          "legendFormat": "Timeouts / network"
+        }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
           "min": 0,
           "max": 0.05,
+          "noValue": "0",
           "custom": { "drawStyle": "line", "lineWidth": 2 },
           "thresholds": {
             "mode": "absolute",
@@ -289,17 +378,28 @@
           }
         }
       },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } }
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      }
     },
     {
       "type": "timeseries",
-      "title": "Session health (one line each)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "title": "Session health",
+      "description": "Should stay near 100%. Drop = journeys or heartbeats failing.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
       "id": 9,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
-        { "expr": "avg(k6_journey_success_rate)", "refId": "A", "legendFormat": "Full journey OK" },
-        { "expr": "avg(k6_heartbeat_success_rate)", "refId": "B", "legendFormat": "Heartbeat OK" }
+        {
+          "expr": "avg(k6_journey_success_rate)",
+          "refId": "A",
+          "legendFormat": "Full journey OK"
+        },
+        {
+          "expr": "avg(k6_heartbeat_success_rate)",
+          "refId": "B",
+          "legendFormat": "Heartbeat OK"
+        }
       ],
       "fieldConfig": {
         "defaults": {
@@ -309,17 +409,43 @@
           "custom": { "drawStyle": "line", "lineWidth": 2 }
         }
       },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } }
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      }
     },
     {
       "type": "timeseries",
-      "title": "Latency p95 by area (one line per product area)",
-      "description": "Venue / music / events / social / chat — not one line per URL.",
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 32 },
+      "title": "Latency p95 by product area",
+      "description": "One line per area (venue / music / events / social / chat) — not one line per URL.",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 31 },
       "id": 10,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
-        { "expr": "max by (api_group) (k6_http_req_duration_p95{api_group=~\"venue|music|events|social|chat\"})", "refId": "A", "legendFormat": "{{api_group}}" }
+        {
+          "expr": "max(k6_venue_api_duration_p95)",
+          "refId": "A",
+          "legendFormat": "venue"
+        },
+        {
+          "expr": "max(k6_music_api_duration_p95)",
+          "refId": "B",
+          "legendFormat": "music"
+        },
+        {
+          "expr": "max(k6_event_api_duration_p95)",
+          "refId": "C",
+          "legendFormat": "events"
+        },
+        {
+          "expr": "max(k6_social_api_duration_p95)",
+          "refId": "D",
+          "legendFormat": "social"
+        },
+        {
+          "expr": "max(k6_chat_api_duration_p95)",
+          "refId": "E",
+          "legendFormat": "chat"
+        }
       ],
       "fieldConfig": {
         "defaults": {
@@ -329,23 +455,38 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 1500 },
-              { "color": "red", "value": 3000 }
+              { "color": "yellow", "value": 3000 },
+              { "color": "red", "value": 5000 }
             ]
           }
         }
       },
-      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"], "showLegend": true } }
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "max"],
+          "showLegend": true
+        }
+      }
     },
     {
       "type": "timeseries",
-      "title": "Overall latency — p95 and p99 (two lines only)",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 41 },
+      "title": "Overall latency — p95 and p99",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
       "id": 11,
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "targets": [
-        { "expr": "max(k6_http_req_duration_p95)", "refId": "A", "legendFormat": "p95 (all APIs)" },
-        { "expr": "max(k6_http_req_duration_p99)", "refId": "B", "legendFormat": "p99 (all APIs)" }
+        {
+          "expr": "max(k6_http_req_duration_p95)",
+          "refId": "A",
+          "legendFormat": "p95 (all APIs)"
+        },
+        {
+          "expr": "max(k6_http_req_duration_p99)",
+          "refId": "B",
+          "legendFormat": "p99 (all APIs)"
+        }
       ],
       "fieldConfig": {
         "defaults": {
@@ -353,7 +494,9 @@
           "custom": { "drawStyle": "line", "lineWidth": 2 }
         }
       },
-      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } }
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      }
     }
   ],
   "refresh": "10s",
@@ -377,6 +520,6 @@
   "timezone": "browser",
   "title": "NiteOut k6 — Live Load Test",
   "uid": "niteout-k6-overview",
-  "version": 3,
-  "description": "Aggregated live view + peak stats for the selected time range. Client sign-off = HTML report."
+  "version": 4,
+  "description": "Live load view with correct k6 Prometheus metric names. Failed % uses k6_http_req_failed_rate (not a non-existent _count). Client sign-off = HTML report."
 }

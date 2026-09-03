@@ -6,6 +6,8 @@ export const skippedOperations = new Counter('skipped_operations_total');
 export const transportErrors = new Counter('transport_errors_total');
 export const applicationErrors = new Counter('application_errors_total');
 export const bootstrapFailures = new Counter('bootstrap_failures_total');
+/** Count of responses whose HTTP status is not exactly 200 (includes 0=timeout, 201, 4xx, 5xx). */
+export const non200StatusCount = new Counter('non_200_status_count');
 
 export const transportErrorRate = new Rate('transport_error_rate');
 export const applicationErrorRate = new Rate('application_error_rate');

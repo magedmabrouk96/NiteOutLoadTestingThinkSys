@@ -3,7 +3,7 @@ import { check } from 'k6';
 import { ENV } from '../config/environments.js';
 import {
   errorsTotal, transportErrors, applicationErrors,
-  transportErrorRate, applicationErrorRate,
+  transportErrorRate, applicationErrorRate, non200StatusCount,
 } from './metrics.js';
 import { recordEndpointResult } from './endpoint-metrics.js';
 
@@ -25,9 +25,20 @@ export function post(path, token, body, input={}) {
 }
 export function del(path, token, input={}) { return http.del(path,null,params(token,input)); }
 
+function recordNon200(response, name) {
+  const status = response && Number.isFinite(response.status) ? response.status : 0;
+  if (status === 200) return;
+  non200StatusCount.add(1, {
+    status: String(status),
+    endpoint: name,
+    kind: status === 0 ? 'timeout_or_network' : (status >= 200 && status < 300 ? 'non_200_success' : 'error'),
+  });
+}
+
 export function classify(response, name, accepted=null) {
   const transportFailure = !response || response.status === 0;
   transportErrorRate.add(transportFailure, { endpoint:name });
+  recordNon200(response, name);
   if (transportFailure) {
     transportErrors.add(1,{endpoint:name,error_code:String(response?.error_code||'unknown')});
     errorsTotal.add(1,{type:'transport',endpoint:name});

@@ -95,14 +95,14 @@ observability/grafana/dashboards/niteout-k6-overview.json
 
 | Section | What it tells you |
 |---|---|
-| Intro panel | Good vs bad at a glance |
-| 4 stat tiles | Active VUs · RPS · Error % · p95 (color-coded) |
-| Ramp & traffic | Users climbing + load on API |
-| Errors & session health | Failures vs journey/heartbeat success |
-| Latency by area | Venue / music / events / social / chat (matches HTML report) |
-| Overall p95/p99 | Tail latency spikes |
+| Intro panel | Plain-English legend |
+| Window tiles | Peak users · peak RPS · **Failed requests %** · slowest p95 |
+| Live tiles | Users / RPS / failed % / p95 *right now* |
+| Charts | Users, traffic, failures, journey health, latency by area |
 
-**Good while watching:** errors **&lt; 1%**, journey/heartbeat **~100%**, read p95 mostly **&lt; 1.5s**.  
+**Failed requests %** uses k6’s real metric `k6_http_req_failed_rate`. A healthy run shows **0%**, not “No data”. Re-import this JSON after any dashboard change (same UID overwrites the old board).
+
+**Good while watching:** failed % **&lt; 1%**, journey/heartbeat **~100%**, read p95 mostly **&lt; 3s** (provisional interactive gate).  
 Formal pass/fail is still the **HTML client report**, not Grafana.
 
 ---

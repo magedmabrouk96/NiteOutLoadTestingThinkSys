@@ -34,6 +34,35 @@ function thresholdStatus(data){
   }
   return rows;
 }
+
+/** Parse non-200 status counters from k6 summary (tagged Counter). */
+function non200StatusRows(data){
+  const rows=[];
+  for(const [name,m] of Object.entries(data?.metrics||{})){
+    if(!name.startsWith('non_200_status_count')) continue;
+    const c = n(m?.values?.count, n(m?.count, 0));
+    if(!c) continue;
+    const tags={};
+    const tagPart=name.includes('{') ? name.slice(name.indexOf('{')+1, name.lastIndexOf('}')) : '';
+    for(const part of tagPart.split(',')){
+      const i=part.indexOf(':');
+      if(i<0) continue;
+      tags[part.slice(0,i).trim()]=part.slice(i+1).trim();
+    }
+    const status=tags.status ?? '?';
+    const endpoint=tags.endpoint ?? '(unknown)';
+    const kind=tags.kind ?? (status==='0'?'timeout_or_network':'error');
+    rows.push({endpoint, status: Number(status), statusLabel: status==='0'?'0 (timeout/network)':status, kind, count:c});
+  }
+  rows.sort((a,b)=> b.count-a.count || String(a.endpoint).localeCompare(b.endpoint) || a.status-b.status);
+  return rows;
+}
+
+function kindLabel(kind){
+  if(kind==='timeout_or_network') return 'Timeout / network';
+  if(kind==='non_200_success') return '2xx (not 200)';
+  return 'Error (non-2xx)';
+}
 function endpointRows(data){
   return ENDPOINT_DEFINITIONS.map(def=>{
     const calls=count(data,`endpoint_${def.id}_calls`);
@@ -108,19 +137,78 @@ function deriveIssues(result){
 function coverageMatrixRows(data, meta={}){
   const current = new Map(endpointRows(data).map(r=>[r.id,r]));
   const profile = String(meta.profile||'').toLowerCase();
-  return ENDPOINT_DEFINITIONS.map(def=>{
-    const e=current.get(def.id);
-    if(e){
-      const a=endpointAssessment(e,profile);
-      return {...def, coverageStatus:'VALIDATED', runStatus:'EXECUTED', status:a.status, calls:e.calls, note:e.phase==='Runtime Write'?'Executed as realistic runtime traffic':'Executed in this run'};
+  const isCoverage = profile === 'coverage';
+
+  // Endpoints that belong to the concurrent final-journey load model.
+  const LOAD_JOURNEY_IDS = new Set([
+    'get_bars','get_bar','get_playing_songs','get_queue',
+    'get_music','get_announcement',
+    'get_current_events','get_event_rsvp','post_event_rsvp',
+    'get_users','get_invite_code','get_blocked','get_who_blocked','get_leaderboard',
+    'post_chat',
+  ]);
+
+  const rows = [];
+  for (const def of ENDPOINT_DEFINITIONS) {
+    const e = current.get(def.id);
+
+    // Bootstrap discovery rows: hide confusing 0-call duplicates when the
+    // same path already ran in the session (e.g. GET /bars).
+    if (def.id === 'setup_bars') {
+      if (e) {
+        const a = endpointAssessment(e, profile);
+        rows.push({...def, coverageStatus:'VALIDATED', runStatus:'EXECUTED', status:a.status, calls:e.calls, note:'Bootstrap venue discovery'});
+      }
+      continue; // venues preconfigured → skip 0-call noise; runtime get_bars is the load row
     }
-    if(def.id==='post_email_subscribe') return {...def, coverageStatus:'EXCLUDED',runStatus:'NOT RUN',status:'EXCLUDED',calls:0,note:'Excluded by client confirmation; current app flow does not enforce email collection'};
-    if(def.phase==='Coverage Write') return {...def, coverageStatus:'VALIDATED',runStatus:'COVERAGE ONLY',status:'PASS',calls:0,note:'Validated in the single-user coverage run; intentionally not repeated under concurrent load'};
-    if(['get_feed','get_stream_info'].includes(def.id)) return {...def, coverageStatus:'CAPABILITY-GATED',runStatus:'NOT RUN',status:'GATED',calls:0,note:'Disabled after endpoint capability validation; not part of active runtime workload'};
-    if(def.id==='post_live_activity') return {...def, coverageStatus:'OPTIONAL',runStatus:'NOT RUN',status:'OPTIONAL',calls:0,note:'Optional write; not enabled in the current client load model'};
-    if(def.id==='setup_bars') return {...def, coverageStatus:'SUPPORTED',runStatus:'NOT RUN',status:'INFO',calls:0,note:'Venue IDs are preconfigured for the final 3-venue workload; runtime GET /bars remains exercised'};
-    return {...def, coverageStatus:'SUPPORTED',runStatus:'NOT RUN',status:'INFO',calls:0,note:'Supported by framework but not exercised in this profile/run'};
-  });
+    if (def.id === 'setup_events') {
+      if (e) {
+        const a = endpointAssessment(e, profile);
+        rows.push({...def, coverageStatus:'VALIDATED', runStatus:'EXECUTED', status:a.status, calls:e.calls, note:'Bootstrap event discovery'});
+      }
+      continue;
+    }
+
+    if (e) {
+      const a = endpointAssessment(e, profile);
+      rows.push({
+        ...def,
+        coverageStatus: 'VALIDATED',
+        runStatus: 'EXECUTED',
+        status: a.status,
+        calls: e.calls,
+        note: def.phase === 'Runtime Write' ? 'Executed every session lap' : 'Executed in this run',
+      });
+      continue;
+    }
+
+    // Not executed this run
+    if (def.id === 'post_email_subscribe') {
+      rows.push({...def, coverageStatus:'EXCLUDED', runStatus:'NOT IN LOAD', status:'EXCLUDED', calls:0, note:'Excluded by client confirmation'});
+      continue;
+    }
+    if (def.phase === 'Coverage Write') {
+      if (isCoverage) {
+        rows.push({...def, coverageStatus:'VALIDATED', runStatus:'EXPECTED', status:'INFO', calls:0, note:'Expected in coverage profile but did not execute'});
+      } else {
+        // Concurrent load: do not list as 0-call "failures" — not part of defined load
+        continue;
+      }
+      continue;
+    }
+    if (['get_feed','get_stream_info'].includes(def.id)) {
+      // Not part of defined concurrent load journey
+      continue;
+    }
+    if (def.id === 'post_live_activity') {
+      continue; // optional, not in defined load
+    }
+    if (LOAD_JOURNEY_IDS.has(def.id)) {
+      rows.push({...def, coverageStatus:'IN LOAD', runStatus:'MISSING', status:'FAIL', calls:0, note:'Defined in load journey but recorded 0 calls — investigate'});
+      continue;
+    }
+  }
+  return rows;
 }
 export function buildDetailedResult(data, meta={}){
   const rows=endpointRows(data);
@@ -153,6 +241,7 @@ export function buildDetailedResult(data, meta={}){
     },
     endpoints:rows,
     thresholds,
+    non200Statuses: non200StatusRows(data),
   };
   result.coverageMatrix=coverageMatrixRows(data,result.metadata);
   result.endpointAssessments=rows.map(e=>({id:e.id,...endpointAssessment(e,result.metadata.profile)}));
@@ -197,7 +286,18 @@ export function detailedConsoleSummary(data, meta={}){
   }
   if(!r.endpoints.length) out+='No classified endpoint calls were completed.\n';
 
-  out+=section('API COVERAGE MATRIX — FULL IN-SCOPE VIEW');
+  out+=section('HTTP STATUS CODES OTHER THAN 200');
+  if(r.non200Statuses?.length){
+    out+=`${pad('STATUS',18)} ${pad('KIND',22)} ${pad('ENDPOINT',48)} ${pad('COUNT',8,'left')}\n`;
+    out+='-'.repeat(118)+'\n';
+    for(const s of r.non200Statuses){
+      out+=`${pad(s.statusLabel,18)} ${pad(kindLabel(s.kind),22)} ${pad(s.endpoint,48)} ${pad(fmtInt(s.count),8,'left')}\n`;
+    }
+  } else {
+    out+='None — every recorded journey response returned HTTP 200.\n';
+  }
+
+  out+=section('LOAD JOURNEY — ENDPOINTS THIS RUN');
   out+=`${pad('COVERAGE',14)} ${pad('THIS RUN',14)} ${pad('METHOD',6)} ${pad('ENDPOINT',36)} ${pad('CALLS',6,'left')} NOTE\n`;
   out+='-'.repeat(118)+'\n';
   for(const c of r.coverageMatrix){
@@ -232,6 +332,9 @@ export function clientHtmlReport(data, meta={}){
     const cls=c.status==='EXCLUDED'?'muted':c.status==='GATED'||c.status==='OPTIONAL'||c.status==='INFO'?'info':c.status==='FAIL'?'fail':'pass';
     return `<tr><td><span class="pill ${cls}">${esc(c.coverageStatus)}</span></td><td>${esc(c.runStatus)}</td><td>${esc(c.method)}</td><td class="endpoint">${esc(c.endpoint)}</td><td>${fmtInt(c.calls)}</td><td>${esc(c.note)}</td></tr>`;
   }).join('');
+  const non200Html = (r.non200Statuses||[]).length
+    ? (r.non200Statuses||[]).map(s=>`<tr><td><code>${esc(s.statusLabel)}</code></td><td>${esc(kindLabel(s.kind))}</td><td class="endpoint">${esc(s.endpoint)}</td><td>${fmtInt(s.count)}</td></tr>`).join('')
+    : '';
   const venues=(r.metadata.venueIds||[]).map((v,i)=>`<li>Venue ${i+1}: <code>${esc(v)}</code></li>`).join('');
   const finalClass=r.finalPass?'pass':'fail';
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NiteOut Performance Report — ${esc(r.metadata.runId)}</title><style>
@@ -250,8 +353,9 @@ export function clientHtmlReport(data, meta={}){
     ${metricCard('Failed Gates',String(failed.length),warnings.length?`${warnings.length} warning(s)`:'No warnings',failed.length?'fail':warnings.length?'warn':'pass')}
   </div>
   <div class="section"><h2>${failed.length?'Issues Requiring Attention':'Executive Summary'}</h2>${issuesHtml}</div>
-  <div class="section"><h2>API Coverage Matrix</h2><div class="note"><strong>How to read this table:</strong> every in-scope endpoint remains visible in load reports. <strong>EXECUTED</strong> means it ran in this load test. <strong>COVERAGE ONLY</strong> means it was already validated in the one-user coverage run but is intentionally not repeated concurrently because all VUs share the same client-provided test identity. <strong>EXCLUDED</strong> reflects explicit client confirmation.</div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Coverage</th><th>This Run</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Reason / Scope Note</th></tr></thead><tbody>${coverageHtml}</tbody></table></div></div>
+  <div class="section"><h2>Load Journey — Endpoints This Run</h2><div class="note"><strong>How to read this table:</strong> only the <strong>defined concurrent load journey</strong> (plus excluded email subscribe) is listed. Every load endpoint should show <strong>EXECUTED</strong> with call counts &gt; 0. Queue may be lower than other session calls when only some venues support it. One-time onboarding/profile writes are not listed here — run the <code>coverage</code> profile for those. Feed / stream-info / liveActivity are not part of the defined load.</div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Coverage</th><th>This Run</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Reason / Scope Note</th></tr></thead><tbody>${coverageHtml}</tbody></table></div></div>
   <div class="section"><h2>Endpoint Performance — Executed This Run</h2><div class="table-wrap"><table><thead><tr><th>Status</th><th>Phase</th><th>Method</th><th>Endpoint</th><th>Calls</th><th>Pass</th><th>Fail</th><th>Pass %</th><th>Avg</th><th>p95</th><th>p99</th><th>Max</th><th>Provisional SLO p95 / p99</th></tr></thead><tbody>${endpointRowsHtml}</tbody></table></div></div>
+  <div class="section"><h2>HTTP Status Codes Other Than 200</h2><div class="note">Every journey response that is <strong>not exactly HTTP 200</strong> is listed here: timeouts (<code>0</code>), other 2xx (e.g. 201), and 4xx/5xx. Pass/fail for the run still uses <strong>any 2xx</strong> as success.</div>${non200Html?`<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Status</th><th>Kind</th><th>Endpoint</th><th>Count</th></tr></thead><tbody>${non200Html}</tbody></table></div>`:`<div class="empty good" style="margin-top:12px">None — every recorded journey response returned HTTP 200.</div>`}</div>
   <div class="section"><h2>Slowest Endpoints by p95</h2><table><thead><tr><th>#</th><th>Endpoint</th><th>Avg</th><th>p95</th><th>p99</th><th>Max</th></tr></thead><tbody>${slowHtml}</tbody></table></div>
   <div class="section"><h2>Provisional SLO Gates</h2><div class="note"><strong>Model:</strong> Reliability gates always apply. Latency SLOs are tiered by criticality (interactive / browse / write / heavy). Smoke fails on reliability only. Values are QA provisional — not client-approved contractual SLAs. See <code>src/slo.js</code>.</div><div style="height:12px"></div><table><thead><tr><th>Status</th><th>Metric</th><th>Gate</th></tr></thead><tbody>${thresholdHtml}</tbody></table></div>
   <div class="section scope"><div><h2>Test Configuration</h2><p><strong>Sessions:</strong> ${esc(r.metadata.configuredVUs)} VUs · <strong>Duration:</strong> ${esc(r.metadata.configuredDuration)} · <strong>Session:</strong> ${esc(r.metadata.sessionSeconds)}s · <strong>Heartbeat:</strong> ${esc(r.metadata.heartbeatSeconds)}s</p><h3>Venue configuration</h3><ul>${venues||'<li>Not specified</li>'}</ul></div><div><h2>Scope & Assumptions</h2><div class="note"><strong>Authenticated test user:</strong> ${esc(r.metadata.testUserIdentity)}<br><strong>Authentication model:</strong> ${esc(r.metadata.authModel)}.</div><h3>Client-confirmed exclusions</h3><ul>${(r.metadata.excludedEndpoints||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>

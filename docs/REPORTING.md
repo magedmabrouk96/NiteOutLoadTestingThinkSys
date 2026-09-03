@@ -12,6 +12,7 @@ Each run produces four outputs:
 - **Green / PASS**: no request failures; within provisional SLO (see `docs/THRESHOLDS.md`).
 - **Amber / WATCH**: at or above 85% of the provisional SLO (error-budget burn).
 - **Red / FAIL**: request failures, or latency SLO breached (load/coverage only — smoke does not fail on latency).
+- A separate table lists **HTTP status codes other than 200** (timeouts, other 2xx, 4xx/5xx) with counts per endpoint.
 
 ## Recommended use
 
@@ -24,7 +25,6 @@ The report explicitly states that concurrent VUs use the single client-provided 
 ## v9.4 client-report conventions
 
 - The report always identifies the authenticated test identity as **test user (+1 1234567891)** (configurable with `K6_TEST_USER_IDENTITY`).
-- The **API Coverage Matrix** lists all endpoints known to the final journey even when a load profile intentionally does not execute one-time profile/onboarding writes.
-- `COVERAGE ONLY` means the endpoint was validated in the single-user coverage run and is intentionally not repeated under concurrent load.
+- The **Load Journey** table lists only concurrent-load endpoints (plus excluded email). Ones with calls &gt; 0 were executed this run. Onboarding/profile writes belong to the `coverage` profile, not concurrent load.
 - `EXCLUDED` means the endpoint was removed from scope by explicit client confirmation.
 - Response-time limits are labelled **Provisional SLO Gates**, not contractual SLAs. Model and numbers live in `src/slo.js` / `docs/THRESHOLDS.md`.
